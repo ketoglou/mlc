@@ -3,7 +3,7 @@
 
 program doMath
 {
-      declare num1,num2,selection
+      declare num1,num2,selection;
       
       forcase
             when(selection=0):print(num1+num2)
