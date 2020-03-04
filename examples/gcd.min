@@ -1,0 +1,44 @@
+//This is a programm to calculate Greatest Common Divisor (GCD)
+
+program GCD
+{
+      declare a,b,gcd;
+      
+
+
+      /*Compute the remainder of the division of a to b*/
+      procedure remainder(a,b){
+            if (a>b) 
+                 while (a>=b)
+                        a:=a-b
+            return(a)
+      }      
+
+      /*This procedure does all the work
+      on the program*/
+      procedure GreatCommonDivisor(x,y,z){
+            declare lower;
+            declare i;
+            i:=0
+            if (x>y)
+                  lower := y
+            else
+                  lower := x
+            loop
+                  if (i>=small)
+                        exit
+                  else
+                        if ((remainder(in x,in i) = 0) and (remainder(in y,in i) = 0))
+                              z = i
+            return
+      }
+
+                                                
+      input(a)
+      input(b)
+      while (a>=0 and b>=0)
+            call GreatCommonDivisor(in a,in b,inout gcd)
+            print(gcd)
+      
+}
+
