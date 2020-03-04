@@ -8,7 +8,7 @@ program GCD
 
       /*Compute the remainder of the division of a to b*/
       procedure remainder(a,b){
-            if (a>b) 
+            if (a>b) then
                  while (a>=b)
                         a:=a-b
             return(a)
@@ -20,17 +20,17 @@ program GCD
             declare lower;
             declare i;
             i:=0
-            if (x>y)
+            if (x>y) then
                   lower := y
             else
                   lower := x
             loop
-                  if (i>=small)
+                  if (i>=small) then
                         exit
                   else
                         if ((remainder(in x,in i) = 0) and (remainder(in y,in i) = 0))
                               z = i
-            return
+            return 0
       }
 
                                                 
