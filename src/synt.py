@@ -118,8 +118,7 @@ class Synt:
             while syntax_error(";", Id.SEPERATOR, word, ID):
                 self.statement()
                 word, ID = self.lex.start_read()
-            syntax_error_word_id("}", Id.GROUPING, word,
-                                 ID, self.lex.file_line)
+            syntax_error_word_id("}", Id.GROUPING, word,ID, self.lex.file_line)
         else:
             self.lex.undo_read()
             self.statement()
@@ -138,6 +137,7 @@ class Synt:
         elif word == "loop":
             self.loop_stat()
         elif word == "exit":
+            word, ID = self.lex.start_read()
             return
         elif word == "forcase":
             self.forcase_stat()
@@ -326,7 +326,7 @@ class Synt:
     def condition(self):
         self.boolterm()
         word, ID = self.lex.start_read()
-        while syntax_error("or", Id.IDENTIFIER, word, ID, self.lex.file_line):
+        while syntax_error("or", Id.IDENTIFIER, word, ID):
             self.boolterm()
             word, ID = self.lex.start_read()
         self.lex.undo_read()
@@ -334,7 +334,7 @@ class Synt:
     def boolterm(self):
         self.boolfactor()
         word, ID = self.lex.start_read()
-        while syntax_error("and", Id.IDENTIFIER, word, ID, self.lex.file_line):
+        while syntax_error("and", Id.IDENTIFIER, word, ID):
             self.boolfactor()
             word, ID = self.lex.start_read()
         self.lex.undo_read()
@@ -355,6 +355,7 @@ class Synt:
             syntax_error_word_id("]", Id.GROUPING, word,
                                  ID, self.lex.file_line)
         else:
+            self.lex.undo_read()
             self.expression()
             self.relational_oper()
             self.expression()
@@ -400,12 +401,10 @@ class Synt:
 
     def relational_oper(self):
         word, ID = self.lex.start_read()
-        print(word)
         if syntax_error("=", Id.COMPARATOR, word, ID) or syntax_error("<=", Id.COMPARATOR, word, ID) or syntax_error(">=", Id.COMPARATOR, word, ID) or syntax_error("<", Id.COMPARATOR, word, ID) or syntax_error(">", Id.COMPARATOR, word, ID) or syntax_error("<>", Id.COMPARATOR, word, ID):
             return
         else:
-            syntax_general_error(
-                "= or <= or >= or < or > or <>", word, self.lex.file_line)
+            syntax_general_error("= or <= or >= or < or > or <>", word, self.lex.file_line)
 
     def add_oper(self):
         word, ID = self.lex.start_read()
