@@ -29,11 +29,12 @@ class Symbols:
     NUMBERS = set(string.digits)
     OPERATORS = {"+", "-", "*", "/"}
     COMPARATORS = {"<", ">", "="}
-    SEPERATORS = {";", ",",":"}
+    SEPERATORS = {";", ",", ":"}
     GROUPING = {"(", ")", "[", "]", "{", "}"}
     BLANKS = {" ", "\t", "\n"}
     ALL = LETTERS.union(NUMBERS).union(OPERATORS).union(
         COMPARATORS).union(SEPERATORS).union(GROUPING).union(BLANKS)
+
 
 class Id(Enum):
     OPERATOR = 0
@@ -50,7 +51,7 @@ automata_states = {
     State.INITIAL: [
         {
             'next_state': State.INITIAL,
-            'condition': Symbols.BLANKS,  
+            'condition': Symbols.BLANKS,
             'go_back': False
         },
         {
@@ -104,7 +105,7 @@ automata_states = {
             'condition': "[",
             'go_back': False,
             'id': Id.GROUPING
-            
+
         },
         {
             'next_state': State.FINAL,
@@ -170,13 +171,13 @@ automata_states = {
             'next_state': State.FINAL,
             'condition': Symbols.ALL-Symbols.BLANKS-Symbols.LETTERS-Symbols.NUMBERS,
             'go_back': True,
-            'id': Id.IDENTIFIER  
+            'id': Id.IDENTIFIER
         },
         {
             'next_state': State.FINAL_BLANK,
-            'condition': Symbols.BLANKS, 
+            'condition': Symbols.BLANKS,
             'go_back': False,
-            'id': Id.IDENTIFIER  
+            'id': Id.IDENTIFIER
         }
     ],
     State.NUMERICAL_CONSTANT: [
@@ -189,11 +190,11 @@ automata_states = {
             'next_state': State.FINAL,
             'condition': Symbols.ALL-Symbols.NUMBERS-Symbols.BLANKS,
             'go_back': True,
-            'id': Id.NUMERICAL_CONSTANT  
+            'id': Id.NUMERICAL_CONSTANT
         },
         {
             'next_state': State.FINAL_BLANK,
-            'condition': Symbols.BLANKS, 
+            'condition': Symbols.BLANKS,
             'go_back': False,
             'id': Id.NUMERICAL_CONSTANT
         }
@@ -219,7 +220,7 @@ automata_states = {
         },
         {
             'next_state': State.FINAL_BLANK,
-            'condition': Symbols.BLANKS, 
+            'condition': Symbols.BLANKS,
             'go_back': False,
             'id': Id.COMPARATOR
         }
@@ -240,7 +241,7 @@ automata_states = {
         },
         {
             'next_state': State.FINAL_BLANK,
-            'condition': Symbols.BLANKS, 
+            'condition': Symbols.BLANKS,
             'go_back': False,
             'id': Id.COMPARATOR
         }
@@ -278,7 +279,7 @@ automata_states = {
         },
         {
             'next_state': State.FINAL_BLANK,
-            'condition': Symbols.BLANKS, 
+            'condition': Symbols.BLANKS,
             'go_back': False,
             'id': Id.OPERATOR
         }
@@ -286,13 +287,13 @@ automata_states = {
     State.COMMENT_ONE_LINE: [
         {
             'next_state': State.FINAL_COMMENT,
-            'condition': {"\n",""},
+            'condition': {"\n", ""},
             'go_back': False,
             'id': Id.COMMENT
         },
         {
             'next_state': State.COMMENT_ONE_LINE,
-            'condition': Symbols.ALL-({"\n", ""}), 
+            'condition': Symbols.ALL-({"\n", ""}),
             'go_back': False
         }
     ],
@@ -304,7 +305,7 @@ automata_states = {
         },
         {
             'next_state': State.COMMENT_MULTIPLE_LINES,
-            'condition': Symbols.ALL-{"*"}, 
+            'condition': Symbols.ALL-{"*"},
             'go_back': False
         }
     ],
@@ -317,8 +318,11 @@ automata_states = {
         },
         {
             'next_state': State.COMMENT_MULTIPLE_LINES,
-            'condition': Symbols.ALL-{"/"}, 
+            'condition': Symbols.ALL-{"/"},
             'go_back': False
         }
     ]
 }
+
+reserved_words = {"program", "declare", "if", "else", "while", "doublewhile", "loop", "exit", "forcase", "incase",
+                 "when", "default", "not", "and", "or", "function", "procedure", "call", "return", "in", "inout", "input", "print"}
