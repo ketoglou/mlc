@@ -26,7 +26,12 @@ class Lex:
         return c
 
     def undo_read(self):
-        self.file.seek(self.previous_pos)
+        current_pos = self.file.tell() #Current position
+        self.file.seek(self.previous_pos) #Go back to the start of the previous word
+        find_new_line = self.file.read(current_pos-self.previous_pos) #Read all chars between the start of previous word and the end of the next word
+        self.file.seek(self.previous_pos)#Go back to the start of the previous word
+        self.file_line -= find_new_line.count("\n") #Count the new lines and subtract
+
 
     def start_read(self):
         self.previous_pos = self.file.tell()

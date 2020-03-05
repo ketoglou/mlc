@@ -6,7 +6,7 @@ program doMath
       declare num1,num2,selection;
       
       incase
-            when(selection=0):{print(num1+num2);exit}
+            when(selection=0):{print(num1+num2);exit};
             when(selection=1):{print(num1-num2);exit}
             when(selection=2):{print(num1 * num2);exit}
             when(selection=3):{print(num1 / num2);exit}
