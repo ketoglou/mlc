@@ -25,13 +25,11 @@ class Lex:
         current_state = State.INITIAL
         word = ""
         while current_state != State.FINAL:
-
-            position = self.file.tell()-1
+            #Get next character
+            position = self.file.tell()
             c = self.next_char()
-            while c == " " or c == "\t" or c == "\n":
-                position = self.file.tell()-1
-                c = self.next_char()
 
+            #Special occasions
             if c == "" and current_state != State.INITIAL:
                 error_handler(error_types.UnexpectedEnd, self.file_line)
             elif c == "" and current_state == State.INITIAL:
@@ -39,24 +37,32 @@ class Lex:
             elif c not in Symbols.ALL:
                 error_handler(error_types.UnexpectedChar, self.file_line)
 
+            #Find the next state in finite automata
             for next_state in automata_states[current_state]:
                 if c in next_state["condition"]:
+                    #Get the next state
                     current_state  = next_state["next_state"]
+
+                    #If must,give back the character the previous state take to make checks.
                     if next_state["go_back"] == True:
                         self.file.seek(position)
                         break
-                    elif current_state  == State.COMMENT_ONE_LINE or current_state  == State.COMMENT_MULTIPLE_LINES:
-                        while current_state  != State.FINAL:
-                            c = self.next_char()
-                            if c == "":
-                                error_handler(error_types.UnexpectedCommentEnd, self.file_line)
-                            elif c in next_state["condition"]:
-                                current_state  = next_state["next_state"]
-                        current_state  = State.INITIAL
-                    if current_state  != State.INITIAL:
+                    
+                    #Check if we must append the word or not
+                    if current_state  != State.INITIAL and current_state != State.FINAL_BLANK and current_state != State.FINAL_COMMENT:
                         word = word+c
-                    else:
+                        break
+                    #If we have blanks,ignore them and dont append the word
+                    elif current_state == State.FINAL_BLANK:
+                        current_state = State.FINAL
+                        break
+                    #If we have comments,ignore the next characters
+                    elif current_state == State.FINAL_COMMENT:
+                        current_state = State.FINAL
                         word = ""
-                    print(word)
+                        break
 
-        return word
+        if word != "":
+            return word
+        else:
+            return self.start_automata() #We end up here only in COMMENTS case

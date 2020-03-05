@@ -1,4 +1,15 @@
-xaris()	[ok]  {mak}
-//sxolio 1
-sfdsfdf3df < 323
+/*In this program we give user some options we let him insert two number and then do one of the 4 (+,-,*,/)*/
+//Just demonstrating and testing incase
 
+program doMath
+{
+      declare num1,num2,selection;
+      
+      incase
+            when(selection=0):print(num1+num2);exit
+            when(selection=1):print(num1-num2);exit
+            when(selection=2):print(num1 * num2);exit
+            when(selection=3):print(num1 / num2);exit
+}
+
+//Just demonstrating and testing incase

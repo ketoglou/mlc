@@ -11,7 +11,8 @@ if __name__ == "__main__":
         c=lex.start_automata()
         print(c)
         while c != None:
-            print(c)
             c=lex.start_automata()
+            if c != None:
+                print(c)
     except IndexError:
         error_handler(error_types.FileArgument)
