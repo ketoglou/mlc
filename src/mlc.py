@@ -2,7 +2,7 @@
 
 import sys
 from lex import Lex
-from errors import error_types,error_handler
+from errors import file_lex_error_types,file_lex_error_handler
 from finite_automata import State,automata_states
 
 if __name__ == "__main__":
@@ -15,4 +15,4 @@ if __name__ == "__main__":
             if c != None:
                 print(c)
     except IndexError:
-        error_handler(error_types.FileArgument)
+        file_lex_error_handler(file_lex_error_types.FileArgument)

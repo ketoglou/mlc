@@ -245,7 +245,7 @@ automata_states = {
     State.COMMENT_ONE_LINE: [
         {
             'next_state': State.FINAL_COMMENT,
-            'condition': {"\n", ""},
+            'condition': {"\n",""},
             'go_back': False
         },
         {
