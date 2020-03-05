@@ -10,6 +10,7 @@ class Lex:
             self.file = open(file_name, "r")
             self.file_index = 0
             self.file_line = 1
+            self.previous_pos = 0
         except FileNotFoundError:
             file_lex_error_handler(file_lex_error_types.FileNotFound, file_name)
 
@@ -22,9 +23,14 @@ class Lex:
                 self.file_line += 1
         return c
 
-    def start_automata(self):
+    def undo_read(self):
+        self.file.seek(self.previous_pos)
+
+    def start_read(self):
+        self.previous_pos = self.file.tell()
         current_state = State.INITIAL
         word = ""
+        ID = None
         while current_state != State.FINAL:
             #Get next character
             position = self.file.tell()
@@ -34,7 +40,7 @@ class Lex:
             if c == "" and current_state != State.INITIAL:
                 file_lex_error_handler(file_lex_error_types.UnexpectedEnd, self.file_line)
             elif c == "" and current_state == State.INITIAL:
-                return None #RETURN None when EOF
+                return (None,None) #RETURN None when EOF
             elif c not in Symbols.ALL:
                 file_lex_error_handler(file_lex_error_types.UnexpectedChar, self.file_line,self.file_index)
 
@@ -43,6 +49,10 @@ class Lex:
                 if c in next_state["condition"]:
                     #Get the next state
                     current_state  = next_state["next_state"]
+
+                    #Get the id if is done
+                    if current_state == State.FINAL or current_state == State.FINAL_BLANK or current_state == State.FINAL_COMMENT:
+                        ID = next_state["id"]
 
                     #If must,give back the character the previous state take to make checks.
                     if next_state["go_back"] == True:
@@ -61,9 +71,9 @@ class Lex:
                     elif current_state == State.FINAL_COMMENT:
                         current_state = State.FINAL
                         word = ""
-                        break
+                        break              
 
         if word != "":
-            return word
+            return (word,ID)
         else:
-            return self.start_automata() #We end up here only in COMMENTS case
+            return self.start_read() #We end up here only in COMMENTS case

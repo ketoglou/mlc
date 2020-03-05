@@ -35,6 +35,16 @@ class Symbols:
     ALL = LETTERS.union(NUMBERS).union(OPERATORS).union(
         COMPARATORS).union(SEPERATORS).union(GROUPING).union(BLANKS)
 
+class Id(Enum):
+    OPERATOR = 0
+    COMPARATOR = 1
+    GROUPING = 2
+    SEPERATOR = 3
+    IDENTIFIER = 4
+    NUMERICAL_CONSTANT = 5
+    EQUAL = 6
+    COMMENT = 7
+
 
 automata_states = {
     State.INITIAL: [
@@ -56,67 +66,81 @@ automata_states = {
         {
             'next_state': State.FINAL,
             'condition': "+",
-            'go_back': False
+            'go_back': False,
+            'id': Id.OPERATOR
         },
         {
             'next_state': State.FINAL,
             'condition': "-",
-            'go_back': False
+            'go_back': False,
+            'id': Id.OPERATOR
         },
         {
             'next_state': State.FINAL,
             'condition': "*",
-            'go_back': False
+            'go_back': False,
+            'id': Id.OPERATOR
         },
         {
             'next_state': State.FINAL,
             'condition': "=",
-            'go_back': False
+            'go_back': False,
+            'id': Id.COMPARATOR
         },
         {
             'next_state': State.FINAL,
             'condition': "(",
-            'go_back': False
+            'go_back': False,
+            'id': Id.GROUPING
         },
         {
             'next_state': State.FINAL,
             'condition': ")",
-            'go_back': False
+            'go_back': False,
+            'id': Id.GROUPING
         },
         {
             'next_state': State.FINAL,
             'condition': "[",
-            'go_back': False
+            'go_back': False,
+            'id': Id.GROUPING
+            
         },
         {
             'next_state': State.FINAL,
             'condition': "]",
-            'go_back': False
+            'go_back': False,
+            'id': Id.GROUPING
         },
         {
             'next_state': State.FINAL,
             'condition': "{",
-            'go_back': False
+            'go_back': False,
+            'id': Id.GROUPING
         },
         {
             'next_state': State.FINAL,
             'condition': "}",
-            'go_back': False
+            'go_back': False,
+            'id': Id.GROUPING
         },
         {
             'next_state': State.LESS_THAN,
             'condition': "<",
-            'go_back': False
+            'go_back': False,
+            'id': Id.COMPARATOR
         },
         {
             'next_state': State.GREATER_THAN,
             'condition': ">",
-            'go_back': False
+            'go_back': False,
+            'id': Id.COMPARATOR
         },
         {
             'next_state': State.EQUAL_OR_SEPERATOR,
             'condition': ":",
-            'go_back': False
+            'go_back': False,
+            'id': Id.SEPERATOR
         },
         {
             'next_state': State.COMMENT_OR_DIVISION,
@@ -126,12 +150,14 @@ automata_states = {
         {
             'next_state': State.FINAL,
             'condition': ",",
-            'go_back': False
+            'go_back': False,
+            'id': Id.SEPERATOR
         },
         {
             'next_state': State.FINAL,
             'condition': ";",
-            'go_back': False
+            'go_back': False,
+            'id': Id.SEPERATOR
         }
     ],
     State.IDENTIFIER: [
@@ -143,12 +169,14 @@ automata_states = {
         {
             'next_state': State.FINAL,
             'condition': Symbols.ALL-Symbols.BLANKS-Symbols.LETTERS-Symbols.NUMBERS,
-            'go_back': True
+            'go_back': True,
+            'id': Id.IDENTIFIER  
         },
         {
             'next_state': State.FINAL_BLANK,
             'condition': Symbols.BLANKS, 
-            'go_back': False
+            'go_back': False,
+            'id': Id.IDENTIFIER  
         }
     ],
     State.NUMERICAL_CONSTANT: [
@@ -160,34 +188,40 @@ automata_states = {
         {
             'next_state': State.FINAL,
             'condition': Symbols.ALL-Symbols.NUMBERS-Symbols.BLANKS,
-            'go_back': True
+            'go_back': True,
+            'id': Id.NUMERICAL_CONSTANT  
         },
         {
             'next_state': State.FINAL_BLANK,
             'condition': Symbols.BLANKS, 
-            'go_back': False
+            'go_back': False,
+            'id': Id.NUMERICAL_CONSTANT
         }
     ],
     State.LESS_THAN: [
         {
             'next_state': State.FINAL,
             'condition': ">",
-            'go_back': False
+            'go_back': False,
+            'id': Id.COMPARATOR
         },
         {
             'next_state': State.FINAL,
             'condition': "=",
-            'go_back': False
+            'go_back': False,
+            'id': Id.COMPARATOR
         },
         {
             'next_state': State.FINAL,
             'condition': Symbols.ALL-Symbols.BLANKS-({">", "="}),
-            'go_back': True
+            'go_back': True,
+            'id': Id.COMPARATOR
         },
         {
             'next_state': State.FINAL_BLANK,
             'condition': Symbols.BLANKS, 
-            'go_back': False
+            'go_back': False,
+            'id': Id.COMPARATOR
         }
 
     ],
@@ -195,36 +229,42 @@ automata_states = {
         {
             'next_state': State.FINAL,
             'condition': "=",
-            'go_back': False
+            'go_back': False,
+            'id': Id.COMPARATOR
         },
         {
             'next_state': State.FINAL,
             'condition': Symbols.ALL-Symbols.BLANKS-{"="},
-            'go_back': True
+            'go_back': True,
+            'id': Id.COMPARATOR
         },
         {
             'next_state': State.FINAL_BLANK,
             'condition': Symbols.BLANKS, 
-            'go_back': False
+            'go_back': False,
+            'id': Id.COMPARATOR
         }
     ],
     State.EQUAL_OR_SEPERATOR: [
         {
             'next_state': State.FINAL,
             'condition': "=",
-            'go_back': False
+            'go_back': False,
+            'id': Id.EQUAL
         },
         {
             'next_state': State.FINAL,
             'condition': Symbols.ALL-{"="},
-            'go_back': True
+            'go_back': True,
+            'id': Id.SEPERATOR
         }
     ],
     State.COMMENT_OR_DIVISION: [
         {
             'next_state': State.FINAL,
             'condition': Symbols.ALL-Symbols.BLANKS-({"/", "*"}),  # DIVISION
-            'go_back': True
+            'go_back': True,
+            'id': Id.OPERATOR
         },
         {
             'next_state': State.COMMENT_ONE_LINE,
@@ -239,14 +279,16 @@ automata_states = {
         {
             'next_state': State.FINAL_BLANK,
             'condition': Symbols.BLANKS, 
-            'go_back': False
+            'go_back': False,
+            'id': Id.OPERATOR
         }
     ],
     State.COMMENT_ONE_LINE: [
         {
             'next_state': State.FINAL_COMMENT,
             'condition': {"\n",""},
-            'go_back': False
+            'go_back': False,
+            'id': Id.COMMENT
         },
         {
             'next_state': State.COMMENT_ONE_LINE,
@@ -270,7 +312,8 @@ automata_states = {
         {
             'next_state': State.FINAL_COMMENT,
             'condition': "/",
-            'go_back': False
+            'go_back': False,
+            'id': Id.COMMENT
         },
         {
             'next_state': State.COMMENT_MULTIPLE_LINES,

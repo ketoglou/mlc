@@ -2,6 +2,7 @@
 
 from enum import Enum
 
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -12,12 +13,14 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+
 class file_lex_error_types(Enum):
     FileArgument = 0
     FileNotFound = 1
     UnexpectedEnd = 2
     UnexpectedChar = 3
     UnexpectedCommentEnd = 4
+
 
 def file_lex_error_handler(error_type, *args):
     if error_type == file_lex_error_types.FileArgument:
@@ -38,7 +41,26 @@ def file_lex_error_handler(error_type, *args):
     exit()
 
 
-class syntax_error_types(Enum):
+# class syntax_error_types(Enum):
 
 
-def syntax_error_handler(error_type, *args):
+def syntax_error_word_id(expected_word, expected_id, word, id, line):
+    if(expected_word != word or expected_id != id):
+        print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +" Expected:"+expected_word+" but find:"+word+" , at line "+str(line)+".")
+        exit()
+    return True
+
+def syntax_error_id(expected_id,id,line):
+    if expected_id != id:
+        print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +" Expected:"+str(expected_id)+", and find:"+str(id)+", at line "+str(line)+".")
+        exit()
+    return True
+
+def syntax_error(expected_word, expected_id, word, id):
+    if(expected_word != word or expected_id != id):
+        return False
+    return True
+
+def syntax_general_error(expected_word,word,line):
+    print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +" Expected:"+str(expected_word)+", and find:"+str(word)+", at line "+str(line)+".")
+    exit()
