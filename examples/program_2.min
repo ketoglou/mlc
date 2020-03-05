@@ -2,42 +2,49 @@
 
 program GCD
 {
-      declare a,b,gcd;
+	declare a,b,gcd;
       
 
 
-      /*Compute the remainder of the division of a to b*/
-      procedure remainder(a,b){
-            if (a>b) then
-                 while (a>=b)
-                        a:=a-b
-            return(a)
-      }      
+	/*Compute the remainder of the division of a to b*/
+	procedure remainder(in a,inout b){
+		{
+			if (a>b) then
+				while (a>=b)
+					a:=a-b;
+			return(a)
+		}
+	}      
 
-      /*This procedure does all the work
-      on the program*/
-      procedure GreatCommonDivisor(x,y,z){
-            declare lower;
-            declare i;
-            i:=0
-            if (x>y) then
-                  lower := y
-            else
-                  lower := x
-            loop
-                  if (i>=small) then
-                        exit
-                  else
-                        if ((remainder(in x,in i) = 0) and (remainder(in y,in i) = 0))
-                              z = i
-            return 0
-      }
+  	/*This procedure does all the work
+  	on the program*/
+	procedure GreatCommonDivisor(in x,inout y,in z){
+		declare lower;
+		declare i;
+		{
+		    i:=0;
+		    if (x>y) then
+		          lower := y
+		    else
+		          lower := x;
+			loop
+		    	if (i>=small) then
+		        	exit
+		      	else
+		            if (remainder(in x,in i) = 0 and remainder(in y,in i) = 0) then
+		                  z := i;
+			return 0
+		}
+	}
 
-                                                
-      input(a)
-      input(b)
-      while (a>=0 and b>=0)
-            call GreatCommonDivisor(in a,in b,inout gcd)
+	{                                        
+    	input(a);
+      	input(b);
+      	while (a>=0 and b>=0){
+        	call GreatCommonDivisor(in a,in b,inout gcd);
             print(gcd)
+		}
+
+	}
       
 }

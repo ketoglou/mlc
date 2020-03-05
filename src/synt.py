@@ -156,7 +156,6 @@ class Synt:
         word, ID = self.lex.start_read()
         syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
         word, ID = self.lex.start_read()
-        syntax_error_word_id(":=", Id.EQUAL, word, ID, self.lex.file_line)
         self.expression()
 
     def if_stat(self):
@@ -314,9 +313,9 @@ class Synt:
 
     def actualparitem(self):
         word, ID = self.lex.start_read()
-        if syntax_error("in", Id.IDENTIFIER, word, ID, self.lex.file_line):
+        if syntax_error("in", Id.IDENTIFIER, word, ID):
             self.expression()
-        elif syntax_error("inout", Id.IDENTIFIER, word, ID, self.lex.file_line):
+        elif syntax_error("inout", Id.IDENTIFIER, word, ID):
             word, ID = self.lex.start_read()
             syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
         else:

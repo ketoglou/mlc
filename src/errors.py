@@ -46,7 +46,7 @@ def file_lex_error_handler(error_type, *args):
 
 def syntax_error_word_id(expected_word, expected_id, word, id, line):
     if(expected_word != word or expected_id != id):
-        print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +" Expected:"+expected_word+" but find:"+word+" , at line "+str(line)+".")
+        print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +" Expected:"+str(expected_word)+" but find:"+str(word)+" , at line "+str(line)+".")
         exit()
     return True
 
