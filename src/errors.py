@@ -61,6 +61,18 @@ def syntax_error(expected_word, expected_id, word, id):
         return False
     return True
 
+#Check if the constant is integer and if its in range
+def syntax_int_error(word,line):
+    try:
+        x = int(word)
+        if x > 32767:
+            print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +"Integer out of range, at line "+str(line)+".")
+            exit()
+    except ValueError:
+        print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +" Expected: Integer, and find:"+str(word)+", at line "+str(line)+".")
+        exit()
+    return True
+
 def syntax_general_error(expected_word,word,line):
     print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +" Expected:"+str(expected_word)+", and find:"+str(word)+", at line "+str(line)+".")
     exit()

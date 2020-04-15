@@ -1,34 +1,40 @@
 #!/usr/bin/python3
 
+#IL:Intermediate Language Comment
+
 from lex import Lex
+from int_lang import IntLang
 from finite_automata import Id,reserved_words
-from errors import syntax_error_word_id, syntax_error_id, syntax_error, syntax_general_error
+from errors import *
 
 
 class Synt:
 
     def __init__(self, file_name):
         self.lex = Lex(file_name)
+        self.inLan = IntLang(file_name)
 
     def start(self):
         self.program()
+        self.inLan.close()
 
     def program(self):
         word, ID = self.lex.start_read()
-        syntax_error_word_id("program", Id.IDENTIFIER,
-                             word, ID, self.lex.file_line)
-        word, ID = self.lex.start_read()  # program name
+        syntax_error_word_id("program", Id.IDENTIFIER,word, ID, self.lex.file_line)
+        block_name, ID = self.lex.start_read()  # program name
         syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
+        self.block(block_name)
+
+    def block(self,block_name):
         word, ID = self.lex.start_read()
         syntax_error_word_id("{", Id.GROUPING, word, ID, self.lex.file_line)
-        self.block()
-        word, ID = self.lex.start_read()
-        syntax_error_word_id("}", Id.GROUPING, word, ID, self.lex.file_line)
-
-    def block(self):
+        self.inLan.make_list(block_name) #Create a list for all the quads of this program(or procedure or function)
         self.declarations()
         self.subprograms()
         self.statements()
+        word, ID = self.lex.start_read()
+        syntax_error_word_id("}", Id.GROUPING, word, ID, self.lex.file_line)
+        self.inLan.write_list() #Write the list of quads of this program(or procedure or function)
 
     def declarations(self):
         word, ID = self.lex.start_read()
@@ -68,18 +74,14 @@ class Synt:
         self.lex.undo_read()
 
     def subprogram(self):
-        word, ID = self.lex.start_read()
+        block_name, ID = self.lex.start_read()
         # Name of fuction or procedure
         syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
-        self.funcbody()
+        self.funcbody(block_name)
 
-    def funcbody(self):
+    def funcbody(self,block_name):
         self.formalpars()
-        word, ID = self.lex.start_read()
-        syntax_error_word_id("{", Id.GROUPING, word, ID, self.lex.file_line)
-        self.block()
-        word, ID = self.lex.start_read()
-        syntax_error_word_id("}", Id.GROUPING, word, ID, self.lex.file_line)
+        self.block(block_name)
 
     def formalpars(self):
         word, ID = self.lex.start_read()
@@ -138,6 +140,7 @@ class Synt:
             self.loop_stat()
         elif word == "exit":
             word, ID = self.lex.start_read()
+            self.inLan.genquad("exit","_","_","_")
             return
         elif word == "forcase":
             self.forcase_stat()
@@ -153,10 +156,12 @@ class Synt:
             self.print_stat()
 
     def assignment_stat(self):
-        word, ID = self.lex.start_read()
+        assign, ID = self.lex.start_read()
         syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
         word, ID = self.lex.start_read()
-        self.expression()
+        syntax_error_word_id(":=", Id.EQUAL, word, ID, self.lex.file_line)
+        x = self.expression()
+        self.inLan.genquad(":=",x,"_",assign)
 
     def if_stat(self):
         word, ID = self.lex.start_read()
@@ -260,7 +265,8 @@ class Synt:
         word, ID = self.lex.start_read()
         syntax_error_word_id("return", Id.IDENTIFIER,
                              word, ID, self.lex.file_line)
-        self.expression()
+        x = self.expression()
+        self.inLan.genquad("retv",x,"_","_")
 
     def call_stat(self):
         word, ID = self.lex.start_read()
@@ -269,6 +275,7 @@ class Synt:
         word, ID = self.lex.start_read()
         syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
         self.actualpars()
+        self.inLan.genquad("call",word,"_","_")
 
     def print_stat(self):
         word, ID = self.lex.start_read()
@@ -276,9 +283,10 @@ class Synt:
                              word, ID, self.lex.file_line)
         word, ID = self.lex.start_read()
         syntax_error_word_id("(", Id.GROUPING, word, ID, self.lex.file_line)
-        self.expression()
+        x = self.expression()
         word, ID = self.lex.start_read()
         syntax_error_word_id(")", Id.GROUPING, word, ID, self.lex.file_line)
+        self.inLan.genquad("out",x,"_","_")
 
     def input_stat(self):
         word, ID = self.lex.start_read()
@@ -288,6 +296,7 @@ class Synt:
         syntax_error_word_id("(", Id.GROUPING, word, ID, self.lex.file_line)
         word, ID = self.lex.start_read()
         syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
+        self.inLan.genquad("inp",word,"_","_")
         word, ID = self.lex.start_read()
         syntax_error_word_id(")", Id.GROUPING, word, ID, self.lex.file_line)
 
@@ -314,10 +323,12 @@ class Synt:
     def actualparitem(self):
         word, ID = self.lex.start_read()
         if syntax_error("in", Id.IDENTIFIER, word, ID):
-            self.expression()
+            w = self.expression()
+            self.inLan.genquad("par",w,"CV","_")
         elif syntax_error("inout", Id.IDENTIFIER, word, ID):
             word, ID = self.lex.start_read()
             syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
+            self.inLan.genquad("par",word,"REF","_")
         else:
             syntax_general_error("in or inout", word,
                                  self.lex.file_line)  # Error exit
@@ -355,67 +366,97 @@ class Synt:
                                  ID, self.lex.file_line)
         else:
             self.lex.undo_read()
-            self.expression()
-            self.relational_oper()
-            self.expression()
+            x = self.expression()
+            op = self.relational_oper()
+            y = self.expression()
+            self.inLan.genquad(op,x,y,w)
 
     def expression(self):
-        self.optional_sign()
-        self.term()
+        sign = self.optional_sign()
+        if sign == "-":
+            x = sign + self.term()
+        else:
+            x = self.term()
         word, ID = self.lex.start_read()
         self.lex.undo_read()
+        w = None
         while syntax_error("+", Id.OPERATOR, word, ID) or syntax_error("-", Id.OPERATOR, word, ID):
-            self.add_oper()
-            self.term()
+            if w == None:
+                w = self.inLan.newtemp()
+                self.inLan.genquad(":=",x,"_",w)
+            aop = self.add_oper()
+            y = self.term()
+            self.inLan.genquad(aop,w,y,w)
             word, ID = self.lex.start_read()
             self.lex.undo_read()
+        self.inLan.reset_newtemp()
+        if w is not None:
+            return w
+        return x
 
     def term(self):
-        self.factor()
+        x = self.factor()
         word, ID = self.lex.start_read()
         self.lex.undo_read()
+        w = None
         while syntax_error("*", Id.OPERATOR, word, ID) or syntax_error("/", Id.OPERATOR, word, ID):
-            self.mul_oper()
-            self.factor()
+            if w == None:
+                w = self.inLan.newtemp()
+                self.inLan.genquad(":=",x,"_",w)
+            mop = self.mul_oper()
+            y = self.factor()
+            self.inLan.genquad(mop,w,y,w)
             word, ID = self.lex.start_read()
             self.lex.undo_read()
+        if w is not None:
+            return w
+        return x
 
     def factor(self):
         word, ID = self.lex.start_read()
         if ID == Id.NUMERICAL_CONSTANT:
-            return
+            syntax_int_error(word,self.lex.file_line)
+            return word
         elif syntax_error("(", Id.GROUPING, word, ID):
-            self.expression()
+            x = self.expression()
             word, ID = self.lex.start_read()
             syntax_error_word_id(")", Id.GROUPING, word,
                                  ID, self.lex.file_line)
+            return x
         elif ID == Id.IDENTIFIER:
-            self.idtail()
+            if self.idtail() == True:
+                w = self.inLan.newtemp()
+                self.inLan.genquad("par",w,"RET","_")
+                self.inLan.genquad("call",word,"_","_")
+                word = w
+            return word
 
     def idtail(self):
         word, ID = self.lex.start_read()
         self.lex.undo_read()
         if syntax_error("(", Id.GROUPING, word, ID):
             self.actualpars()
+            return True
+        return False
 
     def relational_oper(self):
         word, ID = self.lex.start_read()
         if syntax_error("=", Id.COMPARATOR, word, ID) or syntax_error("<=", Id.COMPARATOR, word, ID) or syntax_error(">=", Id.COMPARATOR, word, ID) or syntax_error("<", Id.COMPARATOR, word, ID) or syntax_error(">", Id.COMPARATOR, word, ID) or syntax_error("<>", Id.COMPARATOR, word, ID):
-            return
+            return word
         else:
             syntax_general_error("= or <= or >= or < or > or <>", word, self.lex.file_line)
 
     def add_oper(self):
         word, ID = self.lex.start_read()
         if syntax_error("+", Id.OPERATOR, word, ID) or syntax_error("-", Id.OPERATOR, word, ID):
-            return
+            return word
         else:
             syntax_general_error("+ or -", word, self.lex.file_line)
 
     def mul_oper(self):
         word, ID = self.lex.start_read()
         if syntax_error("*", Id.OPERATOR, word, ID) or syntax_error("/", Id.OPERATOR, word, ID):
-            return
+            return word
         else:
             syntax_general_error("* or /", word, self.lex.file_line)
 
@@ -423,4 +464,5 @@ class Synt:
         word, ID = self.lex.start_read()
         self.lex.undo_read()
         if syntax_error("+", Id.OPERATOR, word, ID) or syntax_error("-", Id.OPERATOR, word, ID):
-            self.add_oper()
+            return self.add_oper()
+        return None

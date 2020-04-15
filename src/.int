@@ -1,0 +1,8 @@
+0:jump,_,_,5
+1:begin_block,remainder,_,_
+2:end_block,remainder,_,_
+3:begin_block,GreatCommonDivisor,_,_
+4:end_block,GreatCommonDivisor,_,_
+5:begin_block,GCD,_,_
+6:halt,_,_,_
+7:end_block,GCD,_,_

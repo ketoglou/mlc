@@ -4,12 +4,16 @@
 program doMath
 {
       declare num1,num2,selection;
-      
+      declare num3,num4,sel;
+	  {
+	  num3 := 32767;
+	  num4 := 2242;
       incase
             when(selection=0):{print(num1+num2);exit}
             when(selection=1):{print(num1-num2);exit}
             when(selection=2):{print(num1 * num2);exit}
             when(selection=3):{print(num1 / num2);exit}
+	  }
 }
 
 //Just demonstrating and testing incase

@@ -1,0 +1,23 @@
+//This is for testing nesting in blocks for idermetiad language
+
+program test_blocks
+{
+	declare a,b,c,d;
+      
+	procedure block_1(inout a,inout b){
+		function block_2(in z){
+			declare e,f,g;
+			procedure block_3(){
+				function block_4(in k){
+				
+				}
+			}
+		}
+	}
+	{
+		call block_1(in block_2(in c-2),inout d);
+		d := 3+a+b-23*8+b/2*block_2(in z-1)+3533;
+		print(d);
+		input(a);
+	}
+}
