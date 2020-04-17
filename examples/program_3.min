@@ -19,5 +19,6 @@ program test_blocks
 		d := 3+a+b-23*8+b/2*block_2(in z-1)+3533;
 		print(d);
 		input(a);
+		return block_2(in a);
 	}
 }

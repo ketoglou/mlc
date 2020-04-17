@@ -35,5 +35,9 @@
 34::=,T_0,_,d
 35:out,d,_,_
 36:inp,a,_,_
-37:halt,_,_,_
-38:end_block,test_blocks,_,_
+37:par,a,CV,_
+38:par,T_0,RET,_
+39:call,block_2,_,_
+40:retv,T_0,_,_
+41:halt,_,_,_
+42:end_block,test_blocks,_,_

@@ -168,21 +168,36 @@ class Synt:
         syntax_error_word_id("if", Id.IDENTIFIER, word, ID, self.lex.file_line)
         word, ID = self.lex.start_read()
         syntax_error_word_id("(", Id.GROUPING, word, ID, self.lex.file_line)
-        self.condition()
+        if_start_pos = self.inLan.relative_program_pos() #starting position of if statement
+        exp_list = self.condition(False) #get the condition quads
+        self.inLan.backpatch_relop(exp_list,"true",0) #set the relops of condition quads that jump to true code 
         word, ID = self.lex.start_read()
         syntax_error_word_id(")", Id.GROUPING, word, ID, self.lex.file_line)
         word, ID = self.lex.start_read()
         syntax_error_word_id("then", Id.IDENTIFIER, word,
                              ID, self.lex.file_line)
+
         self.statements()
-        self.elsepart()
+
+        jump_false = self.elsepart() #get the position outside if
+
+        self.inLan.backpatch_jump(exp_list,"false",("+"+str(jump_false))) #set the jump to false quad of the condition
+        self.inLan.add_expression(exp_list,if_start_pos) #add the condition to the code
 
     def elsepart(self):
         word, ID = self.lex.start_read()
+        else_begin_pos = self.inLan.relative_program_pos() #Get the begin address outside if statement
+        #if we have else outside if then we add a jump quad(for jump outside else if the if is true)
+        #add add statements.Either we have else or not we return the position outside if.
         if syntax_error("else", Id.IDENTIFIER, word, ID):
-            self.statements()
+            self.inLan.genquad("jump","_","_","_") #add jump at the end of if
+            self.statements() #add new statements inside else
+            outside_if = self.inLan.relative_program_pos() - else_begin_pos #calculate the relative position for the jump quad to jump
+            self.inLan.programs_list[-1][else_begin_pos] = "jump,_,_,+"+str(outside_if) #edit the jump quad and add the relative position
+            return else_begin_pos #return the
         else:
             self.lex.undo_read()
+        return else_begin_pos
 
     def while_stat(self):
         word, ID = self.lex.start_read()
@@ -190,7 +205,7 @@ class Synt:
                              word, ID, self.lex.file_line)
         word, ID = self.lex.start_read()
         syntax_error_word_id("(", Id.GROUPING, word, ID, self.lex.file_line)
-        self.condition()
+        self.condition(False)
         word, ID = self.lex.start_read()
         syntax_error_word_id(")", Id.GROUPING, word, ID, self.lex.file_line)
         self.statements()
@@ -201,7 +216,7 @@ class Synt:
                              word, ID, self.lex.file_line)
         word, ID = self.lex.start_read()
         syntax_error_word_id("(", Id.GROUPING, word, ID, self.lex.file_line)
-        self.condition()
+        self.condition(False)
         word, ID = self.lex.start_read()
         syntax_error_word_id(")", Id.GROUPING, word, ID, self.lex.file_line)
         self.statements()
@@ -224,7 +239,7 @@ class Synt:
             word, ID = self.lex.start_read()
             syntax_error_word_id(
                 "(", Id.GROUPING, word, ID, self.lex.file_line)
-            self.condition()
+            self.condition(False)
             word, ID = self.lex.start_read()
             syntax_error_word_id(")", Id.GROUPING, word,
                                  ID, self.lex.file_line)
@@ -250,7 +265,7 @@ class Synt:
             word, ID = self.lex.start_read()
             syntax_error_word_id(
                 "(", Id.GROUPING, word, ID, self.lex.file_line)
-            self.condition()
+            self.condition(False)
             word, ID = self.lex.start_read()
             syntax_error_word_id(")", Id.GROUPING, word,
                                  ID, self.lex.file_line)
@@ -333,43 +348,67 @@ class Synt:
             syntax_general_error("in or inout", word,
                                  self.lex.file_line)  # Error exit
 
-    def condition(self):
-        self.boolterm()
+    def condition(self,enable_not):
+        Q = self.boolterm(enable_not)
+        self.inLan.backpatch_relop(Q,"_","true")
         word, ID = self.lex.start_read()
         while syntax_error("or", Id.IDENTIFIER, word, ID):
-            self.boolterm()
+            self.inLan.backpatch_jump(Q,"false",0)
+            Q2 = self.boolterm(enable_not)
+            Q = Q + Q2
+            self.inLan.backpatch_relop(Q,"_","true")
             word, ID = self.lex.start_read()
+        self.inLan.backpatch_jump(Q,"false",0)
+        Q.append("jump,_,_,false")
         self.lex.undo_read()
+        return Q
 
-    def boolterm(self):
-        self.boolfactor()
+    def boolterm(self,enable_not):
+        R = self.boolfactor(enable_not)
         word, ID = self.lex.start_read()
         while syntax_error("and", Id.IDENTIFIER, word, ID):
-            self.boolfactor()
+            R.append("jump,_,_,false")
+            self.inLan.backpatch_relop(R,"_",0)
+            R2 = self.boolfactor(enable_not)
+            R = R + R2
             word, ID = self.lex.start_read()
         self.lex.undo_read()
+        return R
 
-    def boolfactor(self):
+    def boolfactor(self,enable_not):
         word, ID = self.lex.start_read()
         if syntax_error("not", Id.IDENTIFIER, word, ID):
             word, ID = self.lex.start_read()
             syntax_error_word_id("[", Id.GROUPING, word,
                                  ID, self.lex.file_line)
-            self.condition()
+            new_expression = self.condition(True)
             word, ID = self.lex.start_read()
             syntax_error_word_id("]", Id.GROUPING, word,
                                  ID, self.lex.file_line)
+            del new_expression[-1] #delete last jump,_,_,false quad
+            self.inLan.backpatch_relop(new_expression,"true","_") #Change every relop,x,y,true quad to relop,x,y,_ quad
+            return new_expression
         elif syntax_error("[", Id.GROUPING, word, ID):
-            self.condition()
+            new_expression = self.condition(False)
             word, ID = self.lex.start_read()
             syntax_error_word_id("]", Id.GROUPING, word,
                                  ID, self.lex.file_line)
+            del new_expression[-1] #delete last jump,_,_,false quad
+            self.inLan.backpatch_relop(new_expression,"true","_") #Change every relop,x,y,true quad to relop,x,y,_ quad
+            return new_expression
         else:
             self.lex.undo_read()
+            start_address = self.inLan.relative_program_pos()
             x = self.expression()
-            op = self.relational_oper()
+            relop = self.relational_oper()
             y = self.expression()
-            self.inLan.genquad(op,x,y,w)
+            if enable_not :
+                self.inLan.genquad(self.inLan.reverse_relop(relop),x,y,"_")
+            else:
+                self.inLan.genquad(relop,x,y,"_")
+            end_address = self.inLan.relative_program_pos()
+            expression_list = self.inLan.get_expression(start_address,end_address)
+            return expression_list
 
     def expression(self):
         sign = self.optional_sign()
