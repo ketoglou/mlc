@@ -1,0 +1,16 @@
+/* This program is for testing forcase and incase statements */
+
+program test_statements
+{
+	declare a,b,c,d; //declare vars
+	//The program need brackets if we have more than one statements
+	{
+		input(a);
+		forcase
+			when(a = 0): a := a + 10
+			when(a = 1): a := a + 20
+			when(a = 2): a := a + 30
+			when(a = 3): a := a + 40
+			default: print(a)
+	}
+}

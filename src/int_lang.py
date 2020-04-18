@@ -46,6 +46,9 @@ class IntLang:
                 if list(squad[-1])[0] == "+":
                     squad[-1] = str(quad_num + int(squad[-1].split("+")[1]))
                     li[quad] = ",".join(squad)
+                elif list(squad[-1])[0] == "-":
+                    squad[-1] = str(quad_num - int(squad[-1].split("-")[1]))
+                    li[quad] = ",".join(squad)
                 self.fd.write(str(quad_num)+":"+li[quad]+"\n")
             #if we are in the main program then write halt before end_block
             if len(self.programs_list) == 1:
@@ -98,6 +101,14 @@ class IntLang:
                     quad[-1] = new_jump_address
             expression[i] = ",".join(quad)
 
+    #Special backpatch for the jump to false code
+    def backpatch_jump_false(self,cond_start_pos,cond_end_pos,jump_false_address):
+        for i in range(cond_start_pos,cond_end_pos):
+            quad = self.programs_list[-1][i].split(",")
+            if quad[-1] == "false":
+                quad[-1] = "+" + str(jump_false_address)
+                self.programs_list[-1][i] = ",".join(quad)
+
     #Creates new temporary values
     def newtemp(self):
         self.temp_var_value += 1
@@ -137,3 +148,10 @@ class IntLang:
             return ">="
         elif relop == "<>":
             return "="
+
+    #Special function for loop statement finds the exit(s)(if exist(s)) and set them to jump outside loop
+    def special_loop(self,start_address,end_address):
+        for i in range(start_address,end_address):
+            quad = self.programs_list[-1][i].split(",")
+            if quad[0] == "exit" :
+                self.programs_list[-1][i] = "jump,_,_,+" + str(end_address - i + 1)

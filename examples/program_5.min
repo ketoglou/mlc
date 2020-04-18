@@ -1,0 +1,30 @@
+/* This program is for testing while and loop statements */
+
+program test_statements
+{
+	declare a,b,c,d; //declare vars
+	//The program need brackets if we have more than one statements
+	{
+		a := 0;
+
+		while( a < 10){
+			a := a + 1;
+			print(a);
+			if( a = 5) then
+				print(a+1)
+			else
+				print(a-1);
+			d := 456
+		};
+
+		loop{
+			print(1);
+			a := a + 1;
+			if(a = 10) then
+				exit
+
+		}
+
+	}
+}
+	
