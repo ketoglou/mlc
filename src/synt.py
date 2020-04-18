@@ -171,7 +171,7 @@ class Synt:
         if_cond_start_pos = self.inLan.relative_program_pos() #IL:starting position of if statement
         exp_list = self.condition(False) #IL:get the condition quads
         self.inLan.backpatch(exp_list,"true","DISTANCE","RELOP") #IL:set the relops of condition quads that jump to true code 
-        self.inLan.add_expression(exp_list,if_cond_start_pos) #IL:add the condition to the code
+        self.inLan.add_condition(exp_list,if_cond_start_pos) #IL:add the condition to the code
         if_cond_end_pos = self.inLan.relative_program_pos() #IL:starting position of if statement
 
         word, ID = self.lex.start_read()
@@ -212,7 +212,7 @@ class Synt:
         while_cond_start_pos = self.inLan.relative_program_pos() #IL:starting position of while statement
         exp_list = self.condition(False) #IL:get the condition quads
         self.inLan.backpatch(exp_list,"true","DISTANCE","RELOP") #IL:set the relops of condition quads that jump to true code 
-        self.inLan.add_expression(exp_list,while_cond_start_pos) #IL:add the condition to the code
+        self.inLan.add_condition(exp_list,while_cond_start_pos) #IL:add the condition to the code
         while_cond_end_pos = self.inLan.relative_program_pos() #IL:ending position of while statement 
          
         word, ID = self.lex.start_read()
@@ -225,42 +225,62 @@ class Synt:
         self.inLan.backpatch(jump_false,while_cond_start_pos,while_cond_end_pos,"JUMP-FALSE")
 
 
-    #IL:doublewhile(condition).If the condition is true jump to the 1st statement else jump to the second.
-    #After 1st statement copy the condition and change it so if it is true jump to the begin of 1st statement
-    #if it is false jump to the end of 2nd statement.After 2nd statement copy the condition once again and 
-    #change it so if it is true continue outside and if is false jump to the begin of 2nd statement.
     def doublewhile_stat(self):
         word, ID = self.lex.start_read()
         self.error_handler.syntax_error_word_id("doublewhile", Id.IDENTIFIER,
                              word, ID, self.lex.file_line)
         word, ID = self.lex.start_read()
+
+        #We create a temp variable (lets say T_0) and set T_0 = 0.After that we set the condition to
+        #jump to statement_1 if its true or in statement_2 if it is false.We add this code to statements:
+        #if T_0=2 exit doublewhile      if T_0=1 exit doublewhile
+        #statement_1                    statement_2
+        #T_0 = 1                        T_0 = 2
+        #jump to condition              jump to condition
+        temp_var = self.inLan.newtemp() #IL:Create new temporary value
+        temp_val_address = self.inLan.relative_program_pos() #IL:Get position of the quad below
+        self.inLan.genquad(":=","0","_",temp_var) #IL:Give value 0 in the temp value
+
         self.error_handler.syntax_error_word_id("(", Id.GROUPING, word, ID, self.lex.file_line)
         
-        start_pos_cond = self.inLan.relative_program_pos()
+        cond_start_pos = self.inLan.relative_program_pos()
         cond = self.condition(False)
-        end_pos_cond = self.inLan.relative_program_pos()
-        first_cond = cond[:] #IL:use another instance because the original will be used again
-        
-        #Set jump_true for the forcase condition at the beginning and add the condition
-        self.inLan.backpatch(first_cond,"true","DISTANCE","RELOP") #IL:set the relops of condition quads that jump to true code 
-        self.inLan.add_expression(first_cond,start_pos_cond) #IL:add the condition to the code
-        del first_cond  
+        self.inLan.backpatch(cond,"true","DISTANCE","RELOP") #IL:set the relops of condition quads that jump to true code 
+        self.inLan.add_condition(cond,cond_start_pos) #IL:add the condition to the code
+        cond_end_pos = self.inLan.relative_program_pos()
 
         word, ID = self.lex.start_read()
         self.error_handler.syntax_error_word_id(")", Id.GROUPING, word, ID, self.lex.file_line)
 
         #1st statement
-        start_pos_first_statement = self.inLan.relative_program_pos()
+        start_stat1 = self.inLan.relative_program_pos()
+        self.inLan.genquad("=",temp_var,"2","exitDW") #Create the if for stat1
         self.statements()
-        end_pos_first_statement = self.inLan.relative_program_pos()
+        self.inLan.genquad(":=","1","_",temp_var) #Set temp var = 1
+        jump_to_cond = self.inLan.relative_program_pos() - cond_start_pos 
+        self.inLan.genquad("jump","_","_","-"+str(jump_to_cond)) #IL:Jump to condition from stat1
+
         
         word, ID = self.lex.start_read()
         self.error_handler.syntax_error_word_id("else", Id.IDENTIFIER, word, ID, self.lex.file_line)
 
+        #Set condition jump to false
+        jump_false = self.inLan.relative_program_pos() - cond_end_pos + 1 
+        self.inLan.backpatch(jump_false,cond_start_pos,cond_end_pos,"JUMP-FALSE")
+
         #2nd statement
-        start_pos_second_statement = self.inLan.relative_program_pos()
+        start_stat2 = self.inLan.relative_program_pos()
+        self.inLan.genquad("=",temp_var,"1","exitDW") #Create the if for stat2
         self.statements()
-        end_pos_second_statement = self.inLan.relative_program_pos()
+        self.inLan.genquad(":=","2","_",temp_var) #Set temp var = 2
+        jump_to_cond = self.inLan.relative_program_pos() - cond_start_pos 
+        self.inLan.genquad("jump","_","_","-"+str(jump_to_cond)) #IL:Jump to condition frpm stat2
+       
+        #Set the "exitDW" of quads to this position(outside doublewhile)
+        jump_to_cond1 = self.inLan.relative_program_pos() - start_stat1
+        jump_to_cond2 = self.inLan.relative_program_pos() - start_stat2
+        self.inLan.special_doublewhile(start_stat1,jump_to_cond1)
+        self.inLan.special_doublewhile(start_stat2,jump_to_cond2)
 
 
     def loop_stat(self):
@@ -292,7 +312,7 @@ class Synt:
             cond_start_pos = self.inLan.relative_program_pos()
             exp_list = self.condition(False)
             self.inLan.backpatch(exp_list,"true","DISTANCE","RELOP") #IL:set the relops of condition quads that jump to true code 
-            self.inLan.add_expression(exp_list,cond_start_pos) #IL:add the condition to the code
+            self.inLan.add_condition(exp_list,cond_start_pos) #IL:add the condition to the code
             cond_end_pos = self.inLan.relative_program_pos() #IL:ending position of while statement 
 
             word, ID = self.lex.start_read()
@@ -323,19 +343,42 @@ class Synt:
         self.error_handler.syntax_error_word_id("incase", Id.IDENTIFIER,
                              word, ID, self.lex.file_line)
         word, ID = self.lex.start_read()
+
+        #IL:In incase we create a temporary variable and give it the value zero.If one condition
+        #is true then the variable gets the value of 1.At the end of incase we check to see
+        #if variable is 1 then we jump at the begin of incase,if variable is 0 we continue outside incase.
+        temp_var = self.inLan.newtemp() #IL:Create new temporary value
+        temp_val_address = self.inLan.relative_program_pos() #IL:Get position of the quad below
+        self.inLan.genquad(":=","0","_",temp_var) #IL:Give value 0 in the temp value
+
         while self.error_handler.syntax_error("when", Id.IDENTIFIER, word, ID):
             word, ID = self.lex.start_read()
             self.error_handler.syntax_error_word_id(
                 "(", Id.GROUPING, word, ID, self.lex.file_line)
-            self.condition(False)
+
+            cond_start_pos = self.inLan.relative_program_pos()
+            cond = self.condition(False)
+            self.inLan.backpatch(cond,"true","DISTANCE","RELOP") #IL:set the relops of condition quads that jump to true code 
+            self.inLan.add_condition(cond,cond_start_pos) #IL:add the condition to the code
+            cond_end_pos = self.inLan.relative_program_pos()
+
             word, ID = self.lex.start_read()
             self.error_handler.syntax_error_word_id(")", Id.GROUPING, word,
                                  ID, self.lex.file_line)
             word, ID = self.lex.start_read()
             self.error_handler.syntax_error_word_id(":", Id.SEPERATOR, word,
                                  ID, self.lex.file_line)
+
             self.statements()
+            self.inLan.genquad(":=","1","_",temp_var) #IL:Set temp var value to 1
+            
+            jump_false = self.inLan.relative_program_pos() - cond_end_pos + 1
+            self.inLan.backpatch(jump_false,cond_start_pos,cond_end_pos,"JUMP-FALSE")
+
             word, ID = self.lex.start_read()
+
+        jump_to_begin = self.inLan.relative_program_pos() - temp_val_address #IL:positions from beginning of incase
+        self.inLan.genquad("=",temp_var,"1","-"+str(jump_to_begin))
         self.lex.undo_read()
 
     def return_stat(self):
@@ -469,7 +512,7 @@ class Synt:
             else:
                 self.inLan.genquad(relop,x,y,"_")
             end_address = self.inLan.relative_program_pos()
-            expression_list = self.inLan.get_expression(start_address,end_address)
+            expression_list = self.inLan.get_condition(start_address,end_address)
             return expression_list
 
     def expression(self):
@@ -490,7 +533,6 @@ class Synt:
             self.inLan.genquad(aop,w,y,w)
             word, ID = self.lex.start_read()
             self.lex.undo_read()
-        self.inLan.reset_newtemp()
         if w is not None:
             return w
         return x

@@ -64,13 +64,13 @@ class IntLang:
 
     #Return the full expression code and remove it from main code
     #this function is used only in condition statement because we need lists of expression quads
-    def get_expression(self,start_address,end_address):
+    def get_condition(self,start_address,end_address):
         Q = self.programs_list[-1][start_address:end_address]
         del self.programs_list[-1][start_address:end_address]
         return Q
 
-    #This function add the expression we get from the above function (get_expression) to the code
-    def add_expression(self,expression_list,starting_pos):
+    #This function add the condition we get from the above function (get_condition) to the code
+    def add_condition(self,expression_list,starting_pos):
         if(starting_pos == len(self.programs_list[-1])):
             self.programs_list[-1] = self.programs_list[-1] + expression_list
         else:
@@ -154,3 +154,9 @@ class IntLang:
             quad = self.programs_list[-1][i].split(",")
             if quad[0] == "exit" :
                 self.programs_list[-1][i] = "jump,_,_,+" + str(end_address - i + 1)
+
+    #Special function for doublewhile that set the exit from doublewhile quads
+    def special_doublewhile(self,program_address,jump_address):
+        quad = self.programs_list[-1][program_address].split(",")
+        quad[-1] = "+" + str(jump_address)
+        self.programs_list[-1][program_address] = ",".join(quad)

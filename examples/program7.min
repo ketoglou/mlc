@@ -1,0 +1,19 @@
+/* This program is for testing doublewhile statement*/
+
+program testStatements
+{
+	declare a,b,c,d; //declare vars
+	//The program need brackets if we have more than one statements
+	{
+		input(a);
+		input(b);
+		doublewhile(a = 1 and b = 1){
+			a := 2;
+			b := 1
+		}else{
+			a := 3;
+			b := 2
+		};
+		d := 1 + a
+	}
+}

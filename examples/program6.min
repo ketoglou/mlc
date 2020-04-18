@@ -6,11 +6,18 @@ program testStatements
 	//The program need brackets if we have more than one statements
 	{
 		input(a);
+		input(b);
 		forcase
 			when(a = 0): a := a + 10
 			when(a = 1): a := a + 20
 			when(a = 2): a := a + 30
 			when(a = 3): a := a + 40
-			default: print(a)
+			default: print(a);
+		
+		incase
+			when(b = 0): b := b + 100
+			when(b = 1): b := b + 200
+			when(b = 2): b := b + 300
+			when(b = 3): b := b + 400
 	}
 }
