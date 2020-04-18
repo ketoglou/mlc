@@ -1,12 +1,12 @@
 //This is for testing boolean conditions for idermetiad language
 //and if statement
 
-program test_conditions
+program testConditions
 {
 	declare a,b,c,d;
 	
-	procedure block_1(inout a,inout b){
-		function fun_1(in a){
+	procedure block1(inout a,inout b){
+		function fun1(in a){
 			a := 1
 		}
 		{

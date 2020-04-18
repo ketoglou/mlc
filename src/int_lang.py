@@ -76,38 +76,37 @@ class IntLang:
         else:
             self.programs_list[-1][starting_pos:starting_pos] = expression_list
 
-    #Find all relop quads that are in the form "relop,x,y,old_relop_address" and set
-    #the old_jump_address to the new_relop_address.If the new_relop_address == 0
+    #Find all relop or jump(set mode) quads that are in the form "relop,x,y,old_address" or "jump,_,_,old_address
+    #and set the old_address to the new_address.If the new_address == "DISTANCE"
     #then the function set the relop to how positions far is from the end of the expression list.
-    def backpatch_relop(self,expression,old_relop_address,new_relop_address):
-        for i in range(0,len(expression)):
-            quad = expression[i].split(",")
-            if quad[-1] == old_relop_address and quad[-2] != "_":
-                if isinstance(new_relop_address,int) and new_relop_address == 0:
-                    quad[-1] = "+"+str(len(expression)-i) #this relop will jump +str(len(expression)-i) from its current position
-                else:
-                    quad[-1] = new_relop_address
-            expression[i] = ",".join(quad)
+    #Usually used with old_address = "true","false" and new_address = "true","false","DISTANCE"
+    #and mode = "RELOP","JUMP".
+    #Anonter mode is the "JUMP-FALSE" which is usually used when we know where in the code is a condition
+    #that has unseted the "jump to false" quad so is setted to the rigth address
+    #Usage(usually):
+    #backpatch(expression list,"true" or "false","true" or "false","JUMP" or "RELOP")
+    #backpatch(expression list,"true" or "false","DISTANCE","JUMP" or "RELOP")
+    #backpatch(jump to false address,start address in program_list[-1],end_address in program_list[-1],"JUMP-FALSE")
+    def backpatch(self,expression_or_jumpFalseAddress,old_address,new_address,mode):
+        #In this mode we use expression_or_jumpFalseAddress variable as the expression list
+        if mode == "RELOP" or mode == "JUMP":
+            for i in range(0,len(expression_or_jumpFalseAddress)):
+                quad = expression_or_jumpFalseAddress[i].split(",")
+                if quad[-1] == old_address:
+                    if (mode == "RELOP" and quad[-2] != "_") or (mode == "JUMP" and quad[-2] == "_"):
+                        if new_address == "DISTANCE":
+                            quad[-1] = "+"+str(len(expression_or_jumpFalseAddress)-i) #this will jump +str(len(expression)-i) from its current position
+                        else:
+                            quad[-1] = new_address
+                expression_or_jumpFalseAddress[i] = ",".join(quad)
+        #In this mode we use expression_or_jumpFalseAddress variable as address of jump
+        elif mode == "JUMP-FALSE":
+            for i in range(old_address,new_address):
+                quad = self.programs_list[-1][i].split(",")
+                if quad[-1] == "false":
+                    quad[-1] = "+" + str(expression_or_jumpFalseAddress)
+                    self.programs_list[-1][i] = ",".join(quad)
                 
-
-    #Do the same as the backpatch_relop but for jumps
-    def backpatch_jump(self,expression,old_jump_address,new_jump_address):
-        for i in range(0,len(expression)):
-            quad = expression[i].split(",")
-            if quad[-1] == old_jump_address and quad[-2] == "_":
-                if isinstance(new_jump_address,int) and new_jump_address == 0:
-                    quad[-1] = "+"+str(len(expression)-i) #this relop will jump +str(len(expression)-i) from its current position
-                else:
-                    quad[-1] = new_jump_address
-            expression[i] = ",".join(quad)
-
-    #Special backpatch for the jump to false code
-    def backpatch_jump_false(self,cond_start_pos,cond_end_pos,jump_false_address):
-        for i in range(cond_start_pos,cond_end_pos):
-            quad = self.programs_list[-1][i].split(",")
-            if quad[-1] == "false":
-                quad[-1] = "+" + str(jump_false_address)
-                self.programs_list[-1][i] = ",".join(quad)
 
     #Creates new temporary values
     def newtemp(self):

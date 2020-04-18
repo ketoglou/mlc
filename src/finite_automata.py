@@ -32,9 +32,8 @@ class Symbols:
     SEPERATORS = {";", ",", ":"}
     GROUPING = {"(", ")", "[", "]", "{", "}"}
     BLANKS = {" ", "\t", "\n"}
-    SPECIAL_CHARS = {"_"}
     ALL = LETTERS.union(NUMBERS).union(OPERATORS).union(
-        COMPARATORS).union(SEPERATORS).union(GROUPING).union(BLANKS).union(SPECIAL_CHARS)
+        COMPARATORS).union(SEPERATORS).union(GROUPING).union(BLANKS)
 
 
 class Id(Enum):
@@ -57,7 +56,7 @@ automata_states = {
         },
         {
             'next_state': State.IDENTIFIER,
-            'condition': Symbols.LETTERS.union(Symbols.SPECIAL_CHARS),  # a-z,A-Z
+            'condition': Symbols.LETTERS,  # a-z,A-Z
             'go_back': False
         },
         {
@@ -165,12 +164,12 @@ automata_states = {
     State.IDENTIFIER: [
         {
             'next_state': State.IDENTIFIER,
-            'condition': Symbols.LETTERS.union(Symbols.NUMBERS).union(Symbols.SPECIAL_CHARS),  # a-z,A-Z,0-9
+            'condition': Symbols.LETTERS.union(Symbols.NUMBERS),  # a-z,A-Z,0-9
             'go_back': False
         },
         {
             'next_state': State.FINAL,
-            'condition': Symbols.ALL-Symbols.BLANKS-Symbols.LETTERS-Symbols.NUMBERS-Symbols.SPECIAL_CHARS,
+            'condition': Symbols.ALL-Symbols.BLANKS-Symbols.LETTERS-Symbols.NUMBERS,
             'go_back': True,
             'id': Id.IDENTIFIER
         },

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from finite_automata import State, Symbols, automata_states
-
+from errors import *
 
 class Lex:
 
@@ -13,8 +13,7 @@ class Lex:
             self.file_line = 1
             self.previous_pos = 0
         except FileNotFoundError:
-            self.error_handlerfile_lex_error_handler(
-                self.error_handlerfile_lex_error_types.FileNotFound, file_name)
+            self.error_handlerfile_lex_error_handler(file_lex_error_types.FileNotFound, file_name)
 
     def next_char(self):
         c = self.file.read(1)
@@ -45,13 +44,11 @@ class Lex:
 
             # Special occasions
             if c == "" and current_state != State.INITIAL:
-                self.error_handlerfile_lex_error_handler(
-                    self.error_handlerfile_lex_error_types.UnexpectedEnd, self.file_line)
+                self.error_handler.file_lex_error_handler(file_lex_error_types.UnexpectedEnd, self.file_line)
             elif c == "" and current_state == State.INITIAL:
                 return (None, None)  # RETURN None when EOF
             elif c not in Symbols.ALL:
-                self.error_handlerfile_lex_error_handler(
-                    self.error_handlerfile_lex_error_types.UnexpectedChar, self.file_line, self.file_index)
+                self.error_handler.file_lex_error_handler(file_lex_error_types.UnexpectedChar, self.file_line, self.file_index)
 
             # Find the next state in finite automata
             for next_state in automata_states[current_state]:
