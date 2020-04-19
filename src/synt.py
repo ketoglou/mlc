@@ -19,7 +19,7 @@ class Synt:
         self.temp_function = []
         self.program()
         self.inLan.close()
-        for i in range(0,self.inLan.quad_number):
+        for i in range(0,self.inLan.temp_var_value):
             self.variables_list.append("T_"+str(i))
         self.createC = CreateC(file_name,self.variables_list,self.functions_list)
 
