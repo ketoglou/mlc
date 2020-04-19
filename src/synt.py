@@ -4,6 +4,7 @@
 
 from lex import Lex
 from int_lang import IntLang
+from create_c_code import CreateC
 from finite_automata import Id,reserved_words
 from errors import *
 
@@ -13,27 +14,32 @@ class Synt:
         self.inLan = IntLang(file_name)
         self.error_handler = Error_handler(self.inLan)
         self.lex = Lex(file_name,self.error_handler)
-
-    def start(self):
+        self.variables_list = [] #temporary variable list,tha to ftiaksw stin fasi pinakas simvolwn
+        self.functions_list = []
+        self.temp_function = []
         self.program()
         self.inLan.close()
+        for i in range(0,self.inLan.quad_number):
+            self.variables_list.append("T_"+str(i))
+        self.createC = CreateC(file_name,self.variables_list,self.functions_list)
+
 
     def program(self):
         word, ID = self.lex.start_read()
         self.error_handler.syntax_error_word_id("program", Id.IDENTIFIER,word, ID, self.lex.file_line)
         block_name, ID = self.lex.start_read()  # program name
         self.error_handler.syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
-        self.block(block_name)
-
-    def block(self,block_name):
         word, ID = self.lex.start_read()
         self.error_handler.syntax_error_word_id("{", Id.GROUPING, word, ID, self.lex.file_line)
+        self.block(block_name)
+        word, ID = self.lex.start_read()
+        self.error_handler.syntax_error_word_id("}", Id.GROUPING, word, ID, self.lex.file_line)
+
+    def block(self,block_name):
         self.inLan.make_list(block_name) #IL:Create a list for all the quads of this program(or procedure or function)
         self.declarations()
         self.subprograms()
         self.statements()
-        word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("}", Id.GROUPING, word, ID, self.lex.file_line)
         self.inLan.write_list() #IL:Write the list of quads of this program(or procedure or function)
 
     def declarations(self):
@@ -57,30 +63,42 @@ class Synt:
             self.lex.undo_read()
             return
         self.error_handler.syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
+        self.variables_list.append(word)
         word, ID = self.lex.start_read()
         while self.error_handler.syntax_error(",", Id.SEPERATOR, word, ID):
             word, ID = self.lex.start_read()  # variable in varlist
+            self.variables_list.append(word)
             self.error_handler.syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
             word, ID = self.lex.start_read()  # expected comma
         self.lex.undo_read()
         self.varlist()
 
     def subprograms(self):
-        word, ID = self.lex.start_read()
-        if self.error_handler.syntax_error("function", Id.IDENTIFIER, word, ID) or self.error_handler.syntax_error("procedure", Id.IDENTIFIER, word, ID):
-            self.subprogram()
-            self.subprograms()
-        self.lex.undo_read()
+        while self.subprogram():
+            pass
 
     def subprogram(self):
-        block_name, ID = self.lex.start_read()
-        # Name of fuction or procedure
-        self.error_handler.syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
-        self.funcbody(block_name)
+        word, ID = self.lex.start_read()
+        if self.error_handler.syntax_error("function", Id.IDENTIFIER, word, ID) or self.error_handler.syntax_error("procedure", Id.IDENTIFIER, word, ID):
+            self.temp_function.append(word)
+            block_name, ID = self.lex.start_read()
+            self.temp_function.append(block_name)
+            # Name of fuction or procedure
+            self.error_handler.syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
+            self.funcbody(block_name)
+            self.functions_list.append(self.temp_function[:])
+            self.temp_function.clear()
+            return True
+        self.lex.undo_read()
+        return False
 
     def funcbody(self,block_name):
         self.formalpars()
+        word, ID = self.lex.start_read()
+        self.error_handler.syntax_error_word_id("{", Id.GROUPING, word, ID, self.lex.file_line)
         self.block(block_name)
+        word, ID = self.lex.start_read()
+        self.error_handler.syntax_error_word_id("}", Id.GROUPING, word, ID, self.lex.file_line)
 
     def formalpars(self):
         word, ID = self.lex.start_read()
@@ -103,9 +121,10 @@ class Synt:
         self.formalparlist()
 
     def formalparitem(self):
-        word, ID = self.lex.start_read()
-        if self.error_handler.syntax_error("in", Id.IDENTIFIER, word, ID) or self.error_handler.syntax_error("inout", Id.IDENTIFIER, word, ID):
+        in_or_inout, ID = self.lex.start_read()
+        if self.error_handler.syntax_error("in", Id.IDENTIFIER, in_or_inout, ID) or self.error_handler.syntax_error("inout", Id.IDENTIFIER, in_or_inout, ID):
             word, ID = self.lex.start_read()
+            self.temp_function.append(in_or_inout + " " + word)
             self.error_handler.syntax_error_id(Id.IDENTIFIER, ID, self.lex.file_line)
         else:
             self.error_handler.syntax_general_error("in or inout", word,

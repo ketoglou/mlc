@@ -11,7 +11,6 @@ if __name__ == "__main__":
     try:
         if str(sys.argv[1]).split(".")[-1] == "min":
             syn = Synt(str(sys.argv[1]))
-            syn.start()
         else:
             syn.error_handler.error_message("wrong file prefix expected: .min but find:" + str(sys.argv[1]).split(".")[-1])
     except IndexError:

@@ -3,17 +3,45 @@
 program testStatements
 {
 	declare a,b,c,d; //declare vars
-	//The program need brackets if we have more than one statements
-	{
+	
+	function fun1(in a,inout b){
+		{
+			a := a + 3;
+			print(a);
+			b := b + 10;
+			print(b);
+			return -100
+		}
+	}
+	procedure proc1(in a,inout b){
+		{
+			a := 100;
+			b := 200;
+			print(a);
+			print(b)
+		}
+	}
+	
+	{	
+
 		input(a);
 		input(b);
-		doublewhile(a = 1 and b = 1){
-			a := 2;
-			b := 1
+		doublewhile(a < 10 or b < 10){
+			a := a + 1;
+			b := b + 1
 		}else{
-			a := 3;
-			b := 2
+			a := a - 1;
+			b := b - 1
 		};
-		d := 1 + a
+		d := 1 + a;
+		print(a);
+		print(b);
+		print(d);
+		call proc1(in a,inout b);
+		c := fun1(in 12,inout a);
+		a := a + c;
+		print(a);
+		print(b);
+		print(c)
 	}
 }
