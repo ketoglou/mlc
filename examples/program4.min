@@ -3,7 +3,7 @@
 
 program testConditions
 {
-	declare a,b,c,d;
+	declare a,b,c,d,x,y,z,j,p,k;
 	
 	procedure block1(inout a,inout b){
 		function fun1(in a){

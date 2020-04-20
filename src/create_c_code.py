@@ -4,10 +4,8 @@ import string
 
 class CreateC:
 
-    def __init__(self, file_name,variable_list,functions_l):
+    def __init__(self, file_name):
         name =  file_name[0:-4]
-        self.var_list = variable_list
-        self.functions_list = functions_l #list of functions or procedures and their arguments
         self.file_int = open((name + ".int"), "r") #open .int file for read
         self.file_c = open((name + ".c"),"w+")
         self.createC()

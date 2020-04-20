@@ -4,7 +4,12 @@ program testBlocks
 {
 	declare a,b,c,d;
       
-	procedure block1(inout a,inout b){
+	function fun1(){
+		declare a;
+		return a
+	}
+
+	procedure block1(inout a,inout b,in c){
 		function block2(in z){
 			declare e,f,g;
 			procedure block3(){
@@ -15,10 +20,11 @@ program testBlocks
 		}
 	}
 	{
-		call block1(in block2(in c-2),inout d);
-		d := 3+a+b-23*8+b/2*block2(in z-1)+3533;
+		call block1(inout a,inout b,in c-1);
+		d := 3+a+b-23*8+b/2 * 3533;
 		print(d);
+		c := a+2+b+(c+3+d)+c;
 		input(a);
-		return block2(in a);
+		return fun1();
 	}
 }

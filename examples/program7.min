@@ -38,7 +38,7 @@ program testStatements
 		print(b);
 		print(d);
 		call proc1(in a,inout b);
-		c := fun1(in 12,inout a);
+		c := fun1(in 2,inout a);
 		a := a + c;
 		print(a);
 		print(b);
