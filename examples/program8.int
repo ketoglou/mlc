@@ -1,0 +1,14 @@
+0:jump,_,_,2
+1:begin_block,program8,_,_
+2::=,0,_,a
+3::=,a,_,T_0
+4:+,T_0,1,T_0
+5::=,T_0,_,a
+6:=,a,10,8
+7:jump,_,_,10
+8:jump,_,_,12
+9:jump,_,_,11
+10:out,a,_,_
+11:jump,_,_,3
+12:halt,_,_,_
+13:end_block,program8,_,_

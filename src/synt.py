@@ -12,7 +12,7 @@ from errors import *
 class Synt:
 
     def __init__(self, file_name):
-        self.error_handler = Error_handler()
+        self.error_handler = error_handler()
         self.lex = Lex(file_name,self.error_handler)
         self.inLan = IntLang(file_name)
         self.error_handler.set_inLan(self.inLan)
@@ -27,18 +27,18 @@ class Synt:
 
     def program(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("program", Id.IDENTIFIER,word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "program", Id.IDENTIFIER,word, ID)
         block_name, ID = self.lex.start_read()  # program name
-        self.error_handler.syntax_error_id(Id.IDENTIFIER, ID)
+        self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
         self.current_program_name = block_name #Hold the name of the main program
         self.inLan.program_type[block_name] = "main" 
         self.inLan.variables[block_name] = [] #Create a list for variables of the current program
         self.inLan.temp_variables[block_name] = -1
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("{", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "{", Id.GROUPING, word, ID)
         self.block(block_name)
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("}", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "}", Id.GROUPING, word, ID)
 
     def block(self,block_name):
         self.inLan.make_list(block_name) #IL:Create a list for all the quads of this program(or procedure or function)
@@ -49,13 +49,13 @@ class Synt:
 
     def declarations(self):
         word, ID = self.lex.start_read()
-        if self.error_handler.syntax_error("declare", Id.IDENTIFIER, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "declare", Id.IDENTIFIER, word, ID):
             self.varlist()
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id(";", Id.SEPERATOR, word,ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ";", Id.SEPERATOR, word,ID)
             word, ID = self.lex.start_read()
             self.lex.undo_read()
-            if self.error_handler.syntax_error("declare", Id.IDENTIFIER, word, ID):
+            if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "declare", Id.IDENTIFIER, word, ID):
                 self.declarations()
             else:
                 return
@@ -64,15 +64,15 @@ class Synt:
 
     def varlist(self):
         word, ID = self.lex.start_read()
-        if self.error_handler.syntax_error(";", Id.SEPERATOR, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, ";", Id.SEPERATOR, word, ID):
             self.lex.undo_read()
             return
-        self.error_handler.syntax_error_id(Id.IDENTIFIER, ID)
+        self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
         self.inLan.variables[self.current_program_name].append(word) #Append the variable list of the current program
         word, ID = self.lex.start_read()
-        while self.error_handler.syntax_error(",", Id.SEPERATOR, word, ID):
+        while self.error_handler.error_handle(error_types.SyntaxCheckWordId, ",", Id.SEPERATOR, word, ID):
             word, ID = self.lex.start_read()  # variable in varlist
-            self.error_handler.syntax_error_id(Id.IDENTIFIER, ID)
+            self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
             self.inLan.variables[self.current_program_name].append(word) #Append the variable list of the current program
             word, ID = self.lex.start_read()  # expected comma
         self.lex.undo_read()
@@ -84,9 +84,9 @@ class Synt:
 
     def subprogram(self):
         word, ID = self.lex.start_read()
-        if self.error_handler.syntax_error("function", Id.IDENTIFIER, word, ID) or self.error_handler.syntax_error("procedure", Id.IDENTIFIER, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "function", Id.IDENTIFIER, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "procedure", Id.IDENTIFIER, word, ID):
             block_name, ID = self.lex.start_read()  # Name of fuction or procedure
-            self.error_handler.syntax_error_id(Id.IDENTIFIER, ID)
+            self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
             self.inLan.program_type[block_name] = word #Set its type: function or procedure
             self.inLan.belong_to[block_name] = self.current_program_name #Belongs to the previous program
             self.inLan.temp_variables[block_name] = -1 #Set the temp variables
@@ -102,26 +102,26 @@ class Synt:
     def funcbody(self,block_name):
         self.formalpars()
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("{", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "{", Id.GROUPING, word, ID)
         self.block(block_name)
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("}", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "}", Id.GROUPING, word, ID)
 
     def formalpars(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("(", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
         self.formalparlist()
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id(")", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
 
     def formalparlist(self):
         word, ID = self.lex.start_read()
         self.lex.undo_read()
-        if self.error_handler.syntax_error(")", Id.GROUPING, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, ")", Id.GROUPING, word, ID):
             return
         self.formalparitem()
         word, ID = self.lex.start_read()
-        while self.error_handler.syntax_error(",", Id.SEPERATOR, word, ID):
+        while self.error_handler.error_handle(error_types.SyntaxCheckWordId, ",", Id.SEPERATOR, word, ID):
             self.formalparitem()
             word, ID = self.lex.start_read()  # expected comma
         self.lex.undo_read()
@@ -129,23 +129,23 @@ class Synt:
 
     def formalparitem(self):
         in_or_inout, ID = self.lex.start_read()
-        if self.error_handler.syntax_error("in", Id.IDENTIFIER, in_or_inout, ID) or self.error_handler.syntax_error("inout", Id.IDENTIFIER, in_or_inout, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "in", Id.IDENTIFIER, in_or_inout, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "inout", Id.IDENTIFIER, in_or_inout, ID):
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_id(Id.IDENTIFIER, ID)
+            self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
             self.inLan.variables[self.current_program_name].append(word) #Append the variables list of the current program
             self.inLan.arguments[self.current_program_name].append(in_or_inout) #Append the arguments list of the current program
         else:
-            self.error_handler.syntax_general_error("in or inout", word)  # Error exit
+            self.error_handler.error_handle(error_types.SyntaxWordFatal, "in or inout", word)  # Error exit
 
     def statements(self):
         word, ID = self.lex.start_read()
-        if self.error_handler.syntax_error("{", Id.GROUPING, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "{", Id.GROUPING, word, ID):
             self.statement()
             word, ID = self.lex.start_read()
-            while self.error_handler.syntax_error(";", Id.SEPERATOR, word, ID):
+            while self.error_handler.error_handle(error_types.SyntaxCheckWordId, ";", Id.SEPERATOR, word, ID):
                 self.statement()
                 word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id("}", Id.GROUPING, word,ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "}", Id.GROUPING, word,ID)
         else:
             self.lex.undo_read()
             self.statement()
@@ -182,22 +182,22 @@ class Synt:
 
     def assignment_stat(self):
         assign, ID = self.lex.start_read()
-        self.error_handler.syntax_error_id(Id.IDENTIFIER, ID)
+        self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
         #If the variable is not a temporary maded by the compiler then check if it is declared
         if assign.split("_")[0] != "T":
             un_var = self.inLan.undeclared_variable(assign,self.current_program_name) #Check for undeclared variable
-            self.error_handler.undeclared_variable_error(un_var,assign,self.current_program_name)
+            self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,assign,self.current_program_name)
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id(":=", Id.EQUAL, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ":=", Id.EQUAL, word, ID)
         x = self.expression()
         self.inLan.reset_newtemp(self.current_program_name) #reset temporary variables
         self.inLan.genquad(":=",x,"_",assign)
 
     def if_stat(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("if", Id.IDENTIFIER, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "if", Id.IDENTIFIER, word, ID)
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("(", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
 
         if_cond_start_pos = self.inLan.relative_program_pos() #IL:starting position of if statement
         exp_list = self.condition(False) #IL:get the condition quads
@@ -206,9 +206,9 @@ class Synt:
         if_cond_end_pos = self.inLan.relative_program_pos() #IL:starting position of if statement
 
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id(")", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("then", Id.IDENTIFIER, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "then", Id.IDENTIFIER, word, ID)
 
         self.statements()
 
@@ -222,7 +222,7 @@ class Synt:
         else_begin_pos = self.inLan.relative_program_pos() #IL:Get the begin address outside if statement
         #IL:If we have else outside if then we add a jump quad(for jump outside else if the if is true)
         #add add statements.Either we have else or not we return the position outside if.
-        if self.error_handler.syntax_error("else", Id.IDENTIFIER, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "else", Id.IDENTIFIER, word, ID):
             self.inLan.genquad("jump","_","_","_") #IL:add jump at the end of if
             self.statements() #IL:add new statements inside else
             outside_if = self.inLan.relative_program_pos() - else_begin_pos #IL:calculate the relative position for the jump quad to jump
@@ -234,9 +234,9 @@ class Synt:
 
     def while_stat(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("while", Id.IDENTIFIER,word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "while", Id.IDENTIFIER,word, ID)
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("(", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
 
         while_cond_start_pos = self.inLan.relative_program_pos() #IL:starting position of while statement
         exp_list = self.condition(False) #IL:get the condition quads
@@ -245,7 +245,7 @@ class Synt:
         while_cond_end_pos = self.inLan.relative_program_pos() #IL:ending position of while statement 
          
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id(")", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
 
         self.statements()
 
@@ -256,7 +256,7 @@ class Synt:
 
     def doublewhile_stat(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("doublewhile", Id.IDENTIFIER,word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "doublewhile", Id.IDENTIFIER,word, ID)
         word, ID = self.lex.start_read()
 
         #We create a temp variable (lets say T_0) and set T_0 = 0.After that we set the condition to
@@ -269,7 +269,7 @@ class Synt:
         temp_val_address = self.inLan.relative_program_pos() #IL:Get position of the quad below
         self.inLan.genquad(":=","0","_",temp_var) #IL:Give value 0 in the temp value
 
-        self.error_handler.syntax_error_word_id("(", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
         
         cond_start_pos = self.inLan.relative_program_pos()
         cond = self.condition(False)
@@ -278,7 +278,7 @@ class Synt:
         cond_end_pos = self.inLan.relative_program_pos()
 
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id(")", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
 
         #1st statement
         start_stat1 = self.inLan.relative_program_pos()
@@ -290,7 +290,7 @@ class Synt:
 
         
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("else", Id.IDENTIFIER, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "else", Id.IDENTIFIER, word, ID)
 
         #Set condition jump to false
         jump_false = self.inLan.relative_program_pos() - cond_end_pos + 1 
@@ -315,7 +315,7 @@ class Synt:
 
     def loop_stat(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("loop", Id.IDENTIFIER, word,ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "loop", Id.IDENTIFIER, word,ID)
 
         loop_start_pos = self.inLan.relative_program_pos()
         self.statements()
@@ -326,15 +326,15 @@ class Synt:
 
     def forcase_stat(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("forcase", Id.IDENTIFIER,word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "forcase", Id.IDENTIFIER,word, ID)
         word, ID = self.lex.start_read()
 
         forcase_start_pos = self.inLan.relative_program_pos() #IL:Get the starting position of forcase
 
-        while self.error_handler.syntax_error("when", Id.IDENTIFIER, word, ID):
+        while self.error_handler.error_handle(error_types.SyntaxCheckWordId, "when", Id.IDENTIFIER, word, ID):
             
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id("(", Id.GROUPING, word, ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
 
             cond_start_pos = self.inLan.relative_program_pos()
             exp_list = self.condition(False)
@@ -343,9 +343,9 @@ class Synt:
             cond_end_pos = self.inLan.relative_program_pos() #IL:ending position of while statement 
 
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id(")", Id.GROUPING, word,ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word,ID)
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id(":", Id.SEPERATOR, word,ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ":", Id.SEPERATOR, word,ID)
 
             self.statements()
 
@@ -356,14 +356,14 @@ class Synt:
 
             word, ID = self.lex.start_read()
 
-        self.error_handler.syntax_error_word_id("default", Id.IDENTIFIER,word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "default", Id.IDENTIFIER,word, ID)
         word, ID = self.lex.start_read()   
-        self.error_handler.syntax_error_word_id(":", Id.SEPERATOR,word, ID)             
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ":", Id.SEPERATOR,word, ID)             
         self.statements()
 
     def incase_stat(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("incase", Id.IDENTIFIER,word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "incase", Id.IDENTIFIER,word, ID)
         word, ID = self.lex.start_read()
 
         #IL:In incase we create a temporary variable and give it the value zero.If one condition
@@ -373,9 +373,9 @@ class Synt:
         temp_val_address = self.inLan.relative_program_pos() #IL:Get position of the quad below
         self.inLan.genquad(":=","0","_",temp_var) #IL:Give value 0 in the temp value
 
-        while self.error_handler.syntax_error("when", Id.IDENTIFIER, word, ID):
+        while self.error_handler.error_handle(error_types.SyntaxCheckWordId, "when", Id.IDENTIFIER, word, ID):
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id("(", Id.GROUPING, word, ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
 
             cond_start_pos = self.inLan.relative_program_pos()
             cond = self.condition(False)
@@ -384,9 +384,9 @@ class Synt:
             cond_end_pos = self.inLan.relative_program_pos()
 
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id(")", Id.GROUPING, word,ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word,ID)
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id(":", Id.SEPERATOR, word,ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ":", Id.SEPERATOR, word,ID)
 
             self.statements()
             self.inLan.genquad(":=","1","_",temp_var) #IL:Set temp var value to 1
@@ -404,63 +404,63 @@ class Synt:
 
     def return_stat(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("return", Id.IDENTIFIER,word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "return", Id.IDENTIFIER,word, ID)
         x = self.expression()
         self.inLan.reset_newtemp(self.current_program_name) #reset temporary variables
         self.inLan.genquad("retv",x,"_","_")
 
     def call_stat(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("call", Id.IDENTIFIER, word,ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "call", Id.IDENTIFIER, word,ID)
         proc_name, ID = self.lex.start_read()
-        self.error_handler.syntax_error_id(Id.IDENTIFIER, ID)
+        self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
         arguments = self.actualpars()
-        error_id = self.inLan.undeclared_fun_or_proc(proc_name,self.current_program_name,"procedure",arguments)
-        self.error_handler.undeclared_fun_or_proc(error_id,"procedure",proc_name,self.current_program_name)
+        error_id = self.inLan.error_handle(error_types.UndeclaredFuncOrProc, proc_name,self.current_program_name,"procedure",arguments)
+        self.error_handler.error_handle(error_types.UndeclaredFuncOrProc, error_id,"procedure",proc_name,self.current_program_name)
         self.inLan.genquad("call",word,"_","_")
 
     def print_stat(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("print", Id.IDENTIFIER,
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "print", Id.IDENTIFIER,
                              word, ID)
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("(", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
         x = self.expression()
         self.inLan.reset_newtemp(self.current_program_name) #reset temporary variables
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id(")", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
         self.inLan.genquad("out",x,"_","_")
 
     def input_stat(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("input", Id.IDENTIFIER,word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "input", Id.IDENTIFIER,word, ID)
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("(", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_id(Id.IDENTIFIER, ID)
+        self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
         un_var = self.inLan.undeclared_variable(word,self.current_program_name) #Check for undeclared variable
-        self.error_handler.undeclared_variable_error(un_var,word,self.current_program_name)
+        self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.current_program_name)
         self.inLan.genquad("inp",word,"_","_")
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id(")", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
 
     def actualpars(self):
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id("(", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
         arguments = self.actualparlist()
         word, ID = self.lex.start_read()
-        self.error_handler.syntax_error_word_id(")", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
         return arguments
 
     def actualparlist(self):
         word, ID = self.lex.start_read()
         self.lex.undo_read()
         arguments = []
-        if self.error_handler.syntax_error(")", Id.GROUPING, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, ")", Id.GROUPING, word, ID):
             return arguments
         arguments.append(self.actualparitem())
         word, ID = self.lex.start_read()
-        while self.error_handler.syntax_error(",", Id.SEPERATOR, word, ID):
+        while self.error_handler.error_handle(error_types.SyntaxCheckWordId, ",", Id.SEPERATOR, word, ID):
             arguments.append(self.actualparitem())
             word, ID = self.lex.start_read()  # expected comma
         self.lex.undo_read()
@@ -468,29 +468,29 @@ class Synt:
 
     def actualparitem(self):
         word, ID = self.lex.start_read()
-        if self.error_handler.syntax_error("in", Id.IDENTIFIER, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "in", Id.IDENTIFIER, word, ID):
             w = self.expression()
             #If the variable is not a temporary maded by the compiler then check if it is declared
             if w.split("_")[0] != "T" and (not self.inLan.isInt(w)):
                 un_var = self.inLan.undeclared_variable(w,self.current_program_name) #Check for undeclared variable
-                self.error_handler.undeclared_variable_error(un_var,w,self.current_program_name)
+                self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,w,self.current_program_name)
             self.inLan.genquad("par",w,"CV","_")
             return "in"
-        elif self.error_handler.syntax_error("inout", Id.IDENTIFIER, word, ID):
+        elif self.error_handler.error_handle(error_types.SyntaxCheckWordId, "inout", Id.IDENTIFIER, word, ID):
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_id(Id.IDENTIFIER, ID)
+            self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
             un_var = self.inLan.undeclared_variable(word,self.current_program_name) #Check for undeclared variable
-            self.error_handler.undeclared_variable_error(un_var,word,self.current_program_name)
+            self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.current_program_name)
             self.inLan.genquad("par",word,"REF","_")
             return "inout"
         else:
-            self.error_handler.syntax_general_error("in or inout", word)  # Error exit
+            self.error_handler.error_handle(error_types.SyntaxWordFatal, "in or inout", word)  # Error exit
 
     def condition(self,enable_not):
         Q = self.boolterm(enable_not)
         self.inLan.backpatch(Q,"_","true","RELOP")
         word, ID = self.lex.start_read()
-        while self.error_handler.syntax_error("or", Id.IDENTIFIER, word, ID):
+        while self.error_handler.error_handle(error_types.SyntaxCheckWordId, "or", Id.IDENTIFIER, word, ID):
             self.inLan.backpatch(Q,"false","DISTANCE","JUMP")
             Q2 = self.boolterm(enable_not)
             Q = Q + Q2
@@ -504,7 +504,7 @@ class Synt:
     def boolterm(self,enable_not):
         R = self.boolfactor(enable_not)
         word, ID = self.lex.start_read()
-        while self.error_handler.syntax_error("and", Id.IDENTIFIER, word, ID):
+        while self.error_handler.error_handle(error_types.SyntaxCheckWordId, "and", Id.IDENTIFIER, word, ID):
             R.append("jump,_,_,false")
             self.inLan.backpatch(R,"_","DISTANCE","RELOP")
             R2 = self.boolfactor(enable_not)
@@ -515,19 +515,19 @@ class Synt:
 
     def boolfactor(self,enable_not):
         word, ID = self.lex.start_read()
-        if self.error_handler.syntax_error("not", Id.IDENTIFIER, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "not", Id.IDENTIFIER, word, ID):
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id("[", Id.GROUPING, word,ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "[", Id.GROUPING, word,ID)
             new_expression = self.condition(True)
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id("]", Id.GROUPING, word,ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "]", Id.GROUPING, word,ID)
             del new_expression[-1] #IL:delete last jump,_,_,false quad
             self.inLan.backpatch(new_expression,"true","_","RELOP") #IL:Change every relop,x,y,true quad to relop,x,y,_ quad
             return new_expression
-        elif self.error_handler.syntax_error("[", Id.GROUPING, word, ID):
+        elif self.error_handler.error_handle(error_types.SyntaxCheckWordId, "[", Id.GROUPING, word, ID):
             new_expression = self.condition(False)
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id("]", Id.GROUPING, word,ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "]", Id.GROUPING, word,ID)
             del new_expression[-1] #IL:delete last jump,_,_,false quad
             self.inLan.backpatch(new_expression,"true","_","RELOP") #IL:Change every relop,x,y,true quad to relop,x,y,_ quad
             return new_expression
@@ -554,7 +554,7 @@ class Synt:
         word, ID = self.lex.start_read()
         self.lex.undo_read()
         w = None
-        while self.error_handler.syntax_error("+", Id.OPERATOR, word, ID) or self.error_handler.syntax_error("-", Id.OPERATOR, word, ID):
+        while self.error_handler.error_handle(error_types.SyntaxCheckWordId, "+", Id.OPERATOR, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "-", Id.OPERATOR, word, ID):
             if w == None:
                 w = self.inLan.newtemp()
                 self.inLan.genquad(":=",x,"_",w)
@@ -572,7 +572,7 @@ class Synt:
         word, ID = self.lex.start_read()
         self.lex.undo_read()
         w = None
-        while self.error_handler.syntax_error("*", Id.OPERATOR, word, ID) or self.error_handler.syntax_error("/", Id.OPERATOR, word, ID):
+        while self.error_handler.error_handle(error_types.SyntaxCheckWordId, "*", Id.OPERATOR, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "/", Id.OPERATOR, word, ID):
             if w == None:
                 w = self.inLan.newtemp()
                 self.inLan.genquad(":=",x,"_",w)
@@ -588,12 +588,12 @@ class Synt:
     def factor(self):
         word, ID = self.lex.start_read()
         if ID == Id.NUMERICAL_CONSTANT:
-            self.error_handler.syntax_int_error(word)
+            self.error_handler.error_handle(error_types.IntegerOutOfRange, word)
             return word
-        elif self.error_handler.syntax_error("(", Id.GROUPING, word, ID):
+        elif self.error_handler.error_handle(error_types.SyntaxCheckWordId, "(", Id.GROUPING, word, ID):
             x = self.expression()
             word, ID = self.lex.start_read()
-            self.error_handler.syntax_error_word_id(")", Id.GROUPING, word,ID)
+            self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word,ID)
             return x
         elif ID == Id.IDENTIFIER:
             if self.idtail(word) == True: #function
@@ -605,43 +605,43 @@ class Synt:
                 #If the variable is not a temporary maded by the compiler then check if it is declared
                 if word.split("_")[0] != "T":
                     un_var = self.inLan.undeclared_variable(word,self.current_program_name) #Check for undeclared variable
-                    self.error_handler.undeclared_variable_error(un_var,word,self.current_program_name)
+                    self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.current_program_name)
             return word
 
     def idtail(self,fun_name):
         word, ID = self.lex.start_read()
         self.lex.undo_read()
-        if self.error_handler.syntax_error("(", Id.GROUPING, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "(", Id.GROUPING, word, ID):
             arguments = self.actualpars()
-            error_id = self.inLan.undeclared_fun_or_proc(fun_name,self.current_program_name,"function",arguments)
-            self.error_handler.undeclared_fun_or_proc(error_id,"function",fun_name,self.current_program_name)
+            error_id = self.inLan.error_handle(error_types.UndeclaredFuncOrProc, fun_name,self.current_program_name,"function",arguments)
+            self.error_handler.error_handle(error_types.UndeclaredFuncOrProc, error_id,"function",fun_name,self.current_program_name)
             return True
         return False
 
     def relational_oper(self):
         word, ID = self.lex.start_read()
-        if self.error_handler.syntax_error("=", Id.COMPARATOR, word, ID) or self.error_handler.syntax_error("<=", Id.COMPARATOR, word, ID) or self.error_handler.syntax_error(">=", Id.COMPARATOR, word, ID) or self.error_handler.syntax_error("<", Id.COMPARATOR, word, ID) or self.error_handler.syntax_error(">", Id.COMPARATOR, word, ID) or self.error_handler.syntax_error("<>", Id.COMPARATOR, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "=", Id.COMPARATOR, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "<=", Id.COMPARATOR, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, ">=", Id.COMPARATOR, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "<", Id.COMPARATOR, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, ">", Id.COMPARATOR, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "<>", Id.COMPARATOR, word, ID):
             return word
         else:
-            self.error_handler.syntax_general_error("= or <= or >= or < or > or <>", word)
+            self.error_handler.error_handle(error_types.SyntaxWordFatal, "= or <= or >= or < or > or <>", word)
 
     def add_oper(self):
         word, ID = self.lex.start_read()
-        if self.error_handler.syntax_error("+", Id.OPERATOR, word, ID) or self.error_handler.syntax_error("-", Id.OPERATOR, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "+", Id.OPERATOR, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "-", Id.OPERATOR, word, ID):
             return word
         else:
-            self.error_handler.syntax_general_error("+ or -", word)
+            self.error_handler.error_handle(error_types.SyntaxWordFatal, "+ or -", word)
 
     def mul_oper(self):
         word, ID = self.lex.start_read()
-        if self.error_handler.syntax_error("*", Id.OPERATOR, word, ID) or self.error_handler.syntax_error("/", Id.OPERATOR, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "*", Id.OPERATOR, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "/", Id.OPERATOR, word, ID):
             return word
         else:
-            self.error_handler.syntax_general_error("* or /", word)
+            self.error_handler.error_handle(error_types.SyntaxWordFatal, "* or /", word)
 
     def optional_sign(self):
         word, ID = self.lex.start_read()
         self.lex.undo_read()
-        if self.error_handler.syntax_error("+", Id.OPERATOR, word, ID) or self.error_handler.syntax_error("-", Id.OPERATOR, word, ID):
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "+", Id.OPERATOR, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "-", Id.OPERATOR, word, ID):
             return self.add_oper()
         return None

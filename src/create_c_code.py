@@ -17,6 +17,7 @@ class CreateC:
         relop_list = ["=",">","<","<>",">=","<="]
         oper_list = ["+","-","*","/"]
         #Write integers to file
+        
         if len(self.var_list) > 0:
             self.file_c.write("int ")
             c_str = ""
@@ -24,7 +25,7 @@ class CreateC:
                 c_str = c_str + integer_ + ","
             c_str = c_str[:-1:] #remove the last comma
             self.file_c.write(c_str + ";\n")
-
+        
         #first quad of the idermediate language jumps to main,here we dont need it
         #we need only its label so we know what to call in main
         main_program_label = str(int(self.read_line().split(",")[-1]) - 1) + ":"
