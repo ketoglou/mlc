@@ -47,18 +47,28 @@ class CreateC:
             if quad[0] in relop_list:
                 if quad[0] == "=" : quad[0] = "==" #change the boolean equality because C using other
                 if quad[0] == "<>" : quad[0] = "!=" #change the boolean differrent because C using other
+                quad[1] = self.check_inout(quad[1])
+                quad[2] = self.check_inout(quad[2])
                 c_str = "if (" + quad[1] + quad[0] + quad[2] + ") goto " + "L_" + quad[3]
             elif quad[0] in oper_list:
+                quad[1] = self.check_inout(quad[1])
+                quad[2] = self.check_inout(quad[2])
+                quad[3] = self.check_inout(quad[3])
                 c_str = quad[3] + " = " + quad[1] + " " + quad[0] + " " + quad[2]
             elif quad[0] == "jump":
                 c_str = "goto " + "L_" + quad[3]
             elif  quad[0] == ":=":
+                quad[1] = self.check_inout(quad[1])
+                quad[3] = self.check_inout(quad[3])
                 c_str = quad[3] + " = " + quad[1]
             elif quad[0] == "out":
+                quad[1] = self.check_inout(quad[1])
                 c_str = 'printf("%d\\n",' + quad[1] + ")"
             elif quad[0] == "inp":
+                quad[1] = self.check_inout(quad[1])
                 c_str = 'scanf("%d",&' + quad[1] + ")"
             elif quad[0] == "retv":
+                quad[1] = self.check_inout(quad[1])
                 c_str = "return " + quad[1]
             elif quad[0] == "call":
                 c_str = quad[1] + "()"
@@ -66,9 +76,11 @@ class CreateC:
                 c_str = "return 0"
             elif quad[0] == "par":
                 ret = ""
-                call_label = ""
-                original_quad = ",".join(quad)
+                call_label = label
+
                 while(quad[0] == "par"):
+                    quad[1] = self.check_inout(quad[1])
+                    self.file_c.write("\t"+call_label+"\t//"+",".join(quad)+"\n")
                     if quad[2] == "CV":
                         c_str = c_str + quad[1] + ","
                     elif quad[2] == "REF":
@@ -76,11 +88,11 @@ class CreateC:
                     elif quad[2] == "RET":
                         ret = quad[1] + " = "
                     quad = self.read_line().split(",") #remove label from quad
-                    call_label = quad[0].split(":")[0] #create label(this will used only when we are outside while in call)
+                    call_label = "L_"+quad[0].split(":")[0]+":" #create label(this will used only when we are outside while in call)
                     quad[0] = quad[0][quad[0].index(":")+1:] #remove label from quad
-                    original_quad = original_quad + "/" + ",".join(quad) #used in comments
                 #if we outside while the we have the call quad
-                label = "L_" + call_label + ":" #update label for call
+                label = call_label #update label for call
+                original_quad = ",".join(quad)
                 if c_str != "": #remove the last comma
                     c_str = c_str[:-1]
                 if ret != "":
@@ -99,14 +111,14 @@ class CreateC:
                 if len(self.arguments) > 0:
                     for i in range(0,len(self.arguments)):
                         arg0 = ""
-                        if self.arguments[0] == "in":
+                        if self.arguments[i] == "in":
                             arg0 = "int "
-                        elif self.arguments[0] == "inout":
+                        elif self.arguments[i] == "inout":
                             arg0 = "int *"
                         arg0 = arg0 + self.variables[i]
                         arguments_l = arguments_l + arg0 + ", "
                     arguments_l = arguments_l[:-2]
-
+                    
                 c_str = "\n" + program_type + " " + self.program_name + "(" + arguments_l + "){" 
                 self.file_c.write(c_str + "\t//" + original_quad + "\n\t")
                 self.create_variables()
@@ -134,9 +146,10 @@ class CreateC:
         if len(self.variables) > 0 or len(self.temp_variables) > 0:
             self.file_c.write("int ")
             c_str = ""
-            if len(self.variables) > 0:
-                for integer_ in self.variables:
-                    c_str = c_str + integer_ + ","
+            l_args = len(self.arguments)
+            if len(self.variables) > l_args:
+                for integer_ in range(l_args,len(self.variables)):
+                    c_str = c_str + self.variables[integer_] + ","
             if len(self.temp_variables) > 0:
                 for integer_ in self.temp_variables:
                     c_str = c_str + integer_ + ","
@@ -159,3 +172,11 @@ class CreateC:
             for i in range(0,temp_v):
                 self.temp_variables.append("T_"+str(i))
         self.file_aos.readline() #read the ___
+
+    #Check if a variable is inout and add the *
+    def check_inout(self,var):
+        #Convert inout argument
+        for i in range(0,len(self.arguments)):
+            if self.variables[i] == var and self.arguments[i] == "inout":
+                return "*" + var
+        return var
