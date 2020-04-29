@@ -14,15 +14,8 @@ class IntLang:
         #The first list in this list is the program.Every list have the quad of the current program or function or procedure.
         self.programs_list = [] 
         self.quad_number = 1 #Counts the next quad number
-
-        #Dictionaries that hold the array of symbols
-        #For every program(or function or procedure) hold in a dictionary
-        self.program_type = {}  #Type of program:"main","function","procedure"
-        self.belong_to = {}     #The program that this program belong,if it is main leave it as is.
-        self.arguments = {}     #Arguments of this program,leave empty for main.
-        self.variables = {}     #Variables that have beed declared
-        self.temp_variables = {} #The number indicates the maximum temporary variable (eg if it is 10 then variables form T_0 to T_10 used,if it is -1 no temporary variables used)
-
+        self.return_statement = -1 #Used to check if a function has one return at least or to make susre that procedure has no return inside.It hold the number of line the return found(or -1 if not found)
+        self.exit_statement = False #Used for warning if no exit statement exist in loop statement
 
     #Get the current position of a quad in array
     def relative_program_pos(self):
@@ -66,6 +59,7 @@ class IntLang:
                 self.write_first_line("0:jump,_,_,"+str(begin_block_num+1)+"\n")  #write jump to main
             self.fd.write(str(self.nextquad())+":"+li[1]+"\n")  #write end_block
             del self.programs_list[-1] #remove last list
+            return begin_block_num + 1 #return start label of the program(for array of symbols)
 
     #Creates next quad for the current program(or function or procedure)
     def genquad(self,op,x,y,z):
@@ -124,9 +118,7 @@ class IntLang:
         return "T_"+str(self.temp_var_value-1)
 
     #Reset temporary value number
-    def reset_newtemp(self,current_program):
-        if (self.temp_var_value - 1) > self.temp_variables[current_program] :
-            self.temp_variables[current_program] = self.temp_var_value - 1
+    def reset_newtemp(self):
         self.temp_var_value = 0
 
     #Delete the idermediate file(only for errors)
@@ -180,39 +172,3 @@ class IntLang:
             return True
         except ValueError:
             return False
-            
-    #Check if a variable is declared is the program
-    def undeclared_variable(self,var,current_program_name):
-        if var not in self.variables[current_program_name]:
-            return False
-        return True #error undeclared variable
-
-    #Check if a function or procedure is declared.
-    #name: Used to see if the fun or proc is declared
-    #called_from:The program(function or procedure) that call this function or procedure
-    #type_: It is used to see if a proc called with call command and if a function called in expression
-    #arguments: Used to see if the arguments are correct
-    def undeclared_fun_or_proc(self,name,called_from,type_,arguments):
-        
-        if name in self.program_type:
-            if called_from == self.belong_to[name]:
-                if type_ == self.program_type[name]:
-                    if len(arguments) != len(self.arguments[name]):
-                        #error length of arguments not enough
-                        return 4
-                    if len(arguments) == 0 and len(self.arguments[name]) == 0:
-                        return 0 #no arguments
-                    for arg in range(0,len(arguments)):
-                        if arguments[arg] != self.arguments[name][arg]:
-                            #error expected argument self.arguments[name][arg] but find arguments[arg]
-                            return 5
-                else:
-                    #error function called as proc or proc called as function
-                    return 3
-            else:
-                #error undeclared proc or fun in current program but declared in program belong_to[name]
-                return 2
-        else:
-            #error undeclared first use of proc or fun name
-            return 1
-        return 0

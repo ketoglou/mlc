@@ -3,11 +3,27 @@
 program program8
 {
 	declare a,b;
+	declare c;
+	
+	function fun1(in c,inout d){
+		declare u,y,x;
+			function fun2(){
+				return 100
+			}
+			
+		{
+			c := c + 3;
+			print(c);
+			d := d + 10;
+			print(d);
+			return -100
+		}
+	}
 	{
 		a := 0;
 		loop
 			{
-			a := a + 1;
+			a := a + 1 + fun1(in 1,inout a);
 			if(a = 10) then
 				exit
 			else

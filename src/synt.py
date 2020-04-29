@@ -7,7 +7,7 @@ from int_lang import IntLang
 from create_c_code import CreateC
 from finite_automata import Id,reserved_words
 from errors import *
-
+from array_of_symbols import array_of_symbols,program_activity_record
 
 class Synt:
 
@@ -15,14 +15,15 @@ class Synt:
         self.error_handler = error_handler()
         self.lex = Lex(file_name,self.error_handler)
         self.inLan = IntLang(file_name)
+        self.ao_symbols = array_of_symbols(file_name)
         self.error_handler.set_inLan(self.inLan)
         self.error_handler.set_lex(self.lex)
-        self.current_program_name  = "" #Used for array of symbols
 
         self.program()
 
+        self.ao_symbols.create_full_activity_record()
         self.inLan.close()
-        #self.createC = CreateC(file_name)
+        self.createC = CreateC(file_name)
 
 
     def program(self):
@@ -30,22 +31,25 @@ class Synt:
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "program", Id.IDENTIFIER,word, ID)
         block_name, ID = self.lex.start_read()  # program name
         self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-        self.current_program_name = block_name #Hold the name of the main program
-        self.inLan.program_type[block_name] = "main" 
-        self.inLan.variables[block_name] = [] #Create a list for variables of the current program
-        self.inLan.temp_variables[block_name] = -1
+        self.ao_symbols.add_program(block_name,"main") #Create a program object for array of symbols
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "{", Id.GROUPING, word, ID)
         self.block(block_name)
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "}", Id.GROUPING, word, ID)
+        self.error_handler.error_handle(error_types.ReturnStatementCheck, self.inLan.return_statement, "main", block_name)
+        self.inLan.return_statement = -1
 
     def block(self,block_name):
         self.inLan.make_list(block_name) #IL:Create a list for all the quads of this program(or procedure or function)
         self.declarations()
         self.subprograms()
         self.statements()
-        self.inLan.write_list() #IL:Write the list of quads of this program(or procedure or function)
+        self.ao_symbols.set_temp_variables(self.inLan.temp_var_value)
+        self.inLan.reset_newtemp() #Reset temporary values so a new program can use them
+        label_start = self.inLan.write_list() #IL:Write the list of quads of this program(or procedure or function)
+        self.ao_symbols.set_starting_quad(label_start)
+        self.ao_symbols.undo_nesting_level()#Set the nesting level of the previous program
 
     def declarations(self):
         word, ID = self.lex.start_read()
@@ -68,12 +72,14 @@ class Synt:
             self.lex.undo_read()
             return
         self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-        self.inLan.variables[self.current_program_name].append(word) #Append the variable list of the current program
+        ad_var = self.ao_symbols.add_variable(word) #Append the variable list of the current program
+        self.error_handler.error_handle(error_types.RedaclaredVariable, ad_var, word, self.ao_symbols.current_program_name()) 
         word, ID = self.lex.start_read()
         while self.error_handler.error_handle(error_types.SyntaxCheckWordId, ",", Id.SEPERATOR, word, ID):
             word, ID = self.lex.start_read()  # variable in varlist
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-            self.inLan.variables[self.current_program_name].append(word) #Append the variable list of the current program
+            ad_var = self.ao_symbols.add_variable(word) #Append the variable list of the current program
+            self.error_handler.error_handle(error_types.RedaclaredVariable, ad_var, word, self.ao_symbols.current_program_name()) 
             word, ID = self.lex.start_read()  # expected comma
         self.lex.undo_read()
         self.varlist()
@@ -87,14 +93,10 @@ class Synt:
         if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "function", Id.IDENTIFIER, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "procedure", Id.IDENTIFIER, word, ID):
             block_name, ID = self.lex.start_read()  # Name of fuction or procedure
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-            self.inLan.program_type[block_name] = word #Set its type: function or procedure
-            self.inLan.belong_to[block_name] = self.current_program_name #Belongs to the previous program
-            self.inLan.temp_variables[block_name] = -1 #Set the temp variables
-            self.inLan.arguments[block_name] = [] #Create a list for the arguments
-            self.inLan.variables[block_name] = [] #Create a list for variables of the current program
-            self.current_program_name = block_name #Change the current program
+            self.ao_symbols.add_program(block_name,word)
             self.funcbody(block_name)
-            self.current_program_name = self.inLan.belong_to[block_name] #Return to previous program
+            self.error_handler.error_handle(error_types.ReturnStatementCheck, self.inLan.return_statement, word, block_name)
+            self.inLan.return_statement = -1
             return True
         self.lex.undo_read()
         return False
@@ -132,8 +134,8 @@ class Synt:
         if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "in", Id.IDENTIFIER, in_or_inout, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "inout", Id.IDENTIFIER, in_or_inout, ID):
             word, ID = self.lex.start_read()
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-            self.inLan.variables[self.current_program_name].append(word) #Append the variables list of the current program
-            self.inLan.arguments[self.current_program_name].append(in_or_inout) #Append the arguments list of the current program
+            self.ao_symbols.add_variable(word) #Append the variables list of the current program
+            self.ao_symbols.add_argument(in_or_inout) #Append the arguments list of the current program
         else:
             self.error_handler.error_handle(error_types.SyntaxWordFatal, "in or inout", word)  # Error exit
 
@@ -165,6 +167,7 @@ class Synt:
             self.loop_stat()
         elif word == "exit":
             word, ID = self.lex.start_read()
+            self.inLan.exit_statement = True
             self.inLan.genquad("exit","_","_","_")
             return
         elif word == "forcase":
@@ -185,12 +188,11 @@ class Synt:
         self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
         #If the variable is not a temporary maded by the compiler then check if it is declared
         if assign.split("_")[0] != "T":
-            un_var = self.inLan.undeclared_variable(assign,self.current_program_name) #Check for undeclared variable
-            self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,assign,self.current_program_name)
+            un_var = self.ao_symbols.undeclared_variable(assign) #Check for undeclared variable
+            self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,assign,self.ao_symbols.current_program_name())
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ":=", Id.EQUAL, word, ID)
         x = self.expression()
-        self.inLan.reset_newtemp(self.current_program_name) #reset temporary variables
         self.inLan.genquad(":=",x,"_",assign)
 
     def if_stat(self):
@@ -310,12 +312,12 @@ class Synt:
         self.inLan.special_doublewhile(start_stat1,jump_to_cond1)
         self.inLan.special_doublewhile(start_stat2,jump_to_cond2)
 
-        self.inLan.reset_newtemp(self.current_program_name) #reset temporary variables
 
 
     def loop_stat(self):
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "loop", Id.IDENTIFIER, word,ID)
+        self.inLan.exit_statement = False
 
         loop_start_pos = self.inLan.relative_program_pos()
         self.statements()
@@ -323,6 +325,7 @@ class Synt:
         jump_beginning = loop_end_pos - loop_start_pos
         self.inLan.genquad("jump","_","_","-"+str(jump_beginning))
         self.inLan.special_loop(loop_start_pos,loop_end_pos)
+        self.error_handler.warning_handle(warning_types.NoExitLoop,self.inLan.exit_statement, self.ao_symbols.current_program_name())
 
     def forcase_stat(self):
         word, ID = self.lex.start_read()
@@ -400,13 +403,12 @@ class Synt:
         self.inLan.genquad("=",temp_var,"1","-"+str(jump_to_begin))
         self.lex.undo_read()
 
-        self.inLan.reset_newtemp(self.current_program_name) #reset temporary variables
 
     def return_stat(self):
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "return", Id.IDENTIFIER,word, ID)
         x = self.expression()
-        self.inLan.reset_newtemp(self.current_program_name) #reset temporary variables
+        self.inLan.return_statement = self.lex.file_line
         self.inLan.genquad("retv",x,"_","_")
 
     def call_stat(self):
@@ -415,9 +417,10 @@ class Synt:
         proc_name, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
         arguments = self.actualpars()
-        error_id = self.inLan.error_handle(error_types.UndeclaredFuncOrProc, proc_name,self.current_program_name,"procedure",arguments)
-        self.error_handler.error_handle(error_types.UndeclaredFuncOrProc, error_id,"procedure",proc_name,self.current_program_name)
+        error_id = self.ao_symbols.undeclared_fun_or_proc(proc_name,"procedure",arguments)
+        self.error_handler.error_handle(error_types.UndeclaredFuncOrProc, error_id,"procedure",proc_name,self.ao_symbols.current_program_name())
         self.inLan.genquad("call",word,"_","_")
+        self.ao_symbols
 
     def print_stat(self):
         word, ID = self.lex.start_read()
@@ -426,7 +429,6 @@ class Synt:
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
         x = self.expression()
-        self.inLan.reset_newtemp(self.current_program_name) #reset temporary variables
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
         self.inLan.genquad("out",x,"_","_")
@@ -438,8 +440,8 @@ class Synt:
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-        un_var = self.inLan.undeclared_variable(word,self.current_program_name) #Check for undeclared variable
-        self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.current_program_name)
+        un_var = self.ao_symbols.undeclared_variable(word) #Check for undeclared variable
+        self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.ao_symbols.current_program_name())
         self.inLan.genquad("inp",word,"_","_")
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
@@ -472,15 +474,15 @@ class Synt:
             w = self.expression()
             #If the variable is not a temporary maded by the compiler then check if it is declared
             if w.split("_")[0] != "T" and (not self.inLan.isInt(w)):
-                un_var = self.inLan.undeclared_variable(w,self.current_program_name) #Check for undeclared variable
-                self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,w,self.current_program_name)
+                un_var = self.ao_symbols.undeclared_variable(w) #Check for undeclared variable
+                self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,w,self.ao_symbols.current_program_name())
             self.inLan.genquad("par",w,"CV","_")
             return "in"
         elif self.error_handler.error_handle(error_types.SyntaxCheckWordId, "inout", Id.IDENTIFIER, word, ID):
             word, ID = self.lex.start_read()
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-            un_var = self.inLan.undeclared_variable(word,self.current_program_name) #Check for undeclared variable
-            self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.current_program_name)
+            un_var = self.ao_symbols.undeclared_variable(word) #Check for undeclared variable
+            self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.ao_symbols.current_program_name())
             self.inLan.genquad("par",word,"REF","_")
             return "inout"
         else:
@@ -604,8 +606,8 @@ class Synt:
             else: #variable
                 #If the variable is not a temporary maded by the compiler then check if it is declared
                 if word.split("_")[0] != "T":
-                    un_var = self.inLan.undeclared_variable(word,self.current_program_name) #Check for undeclared variable
-                    self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.current_program_name)
+                    un_var = self.ao_symbols.undeclared_variable(word) #Check for undeclared variable
+                    self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.ao_symbols.current_program_name())
             return word
 
     def idtail(self,fun_name):
@@ -613,8 +615,8 @@ class Synt:
         self.lex.undo_read()
         if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "(", Id.GROUPING, word, ID):
             arguments = self.actualpars()
-            error_id = self.inLan.error_handle(error_types.UndeclaredFuncOrProc, fun_name,self.current_program_name,"function",arguments)
-            self.error_handler.error_handle(error_types.UndeclaredFuncOrProc, error_id,"function",fun_name,self.current_program_name)
+            error_id = self.ao_symbols.undeclared_fun_or_proc(fun_name,"function",arguments)
+            self.error_handler.error_handle(error_types.UndeclaredFuncOrProc, error_id,"function",fun_name,self.ao_symbols.current_program_name())
             return True
         return False
 
