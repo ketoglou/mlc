@@ -33,7 +33,10 @@ class array_of_symbols:
     def add_function(self,func_name, type_):
         self.list_of_programs[-1].functions_names.append(func_name)
         self.list_of_programs[-1].functions_types.append(type_)
-        
+    
+    #append the arguments of itself(recursive)
+    def add_myself_arguments(self):
+        self.list_of_programs[-1].functions_arguments.append(self.list_of_programs[-1].arguments)
 
     def undo_nesting_level(self):
         self.current_nesting_level -= 1
@@ -58,7 +61,7 @@ class array_of_symbols:
             if name == self.list_of_programs[-1].functions_names[i]:
                 function_pos = i
                 break
-
+        
         if function_pos != -1:
             fun_args = self.list_of_programs[-1].functions_arguments[function_pos]
             #args_fun = self.list_of_programs[function_pos].functions_arguments

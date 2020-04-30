@@ -97,6 +97,7 @@ class Synt:
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
             self.ao_symbols.add_function(block_name,word)
             self.ao_symbols.add_program(block_name,word)
+            self.ao_symbols.add_function(block_name,word) #append itself for recursion
             self.funcbody(block_name)
             self.error_handler.error_handle(error_types.ReturnStatementCheck, self.inLan.return_statement, word, block_name)
             self.inLan.return_statement = -1
@@ -106,6 +107,7 @@ class Synt:
 
     def funcbody(self,block_name):
         self.formalpars()
+        self.ao_symbols.add_myself_arguments()
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "{", Id.GROUPING, word, ID)
         self.block(block_name)

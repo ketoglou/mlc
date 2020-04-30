@@ -80,7 +80,7 @@ class CreateC:
 
                 while(quad[0] == "par"):
                     quad[1] = self.check_inout(quad[1])
-                    self.file_c.write("\t"+call_label+"\t//"+",".join(quad)+"\n")
+                    self.file_c.write("\t"+call_label+" asm(\"nop\");\t//"+",".join(quad)+"\n")
                     if quad[2] == "CV":
                         c_str = c_str + quad[1] + ","
                     elif quad[2] == "REF":
@@ -119,12 +119,12 @@ class CreateC:
                         arguments_l = arguments_l + arg0 + ", "
                     arguments_l = arguments_l[:-2]
                     
-                c_str = "\n" + program_type + " " + self.program_name + "(" + arguments_l + "){" 
-                self.file_c.write(c_str + "\t//" + original_quad + "\n\t")
+                c_str = "\n" + program_type + " " + self.program_name + "(" + arguments_l + "){\n" 
+                self.file_c.write(c_str + "\t"+label+"asm(\"nop\");"+"//" + original_quad + "\n\t")
                 self.create_variables()
             elif quad[0] == "end_block":
                 program_begin = True
-                self.file_c.write("}" + "\t//" + original_quad + "\n")
+                self.file_c.write("\t"+label+" asm(\"nop\");"+"\t//" + original_quad + "\n}\n")
                 
             if program_begin == False: 
                 c_str = "\t" + label + " " + c_str + ";" + "\t//" + original_quad + "\n"

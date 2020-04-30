@@ -1,0 +1,19 @@
+
+program FibRecursiveProg{
+    function fib(in n){
+        {
+            if (n = 1) then
+                return 0
+            else{
+                if (n = 2) then
+                    return 1
+                else{
+                    return (fib(in n-1) + fib(in n-2))
+                }
+            }
+        }
+    }
+
+    print(fib(in 10))
+
+}
