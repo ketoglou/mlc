@@ -18,11 +18,12 @@ class Synt:
         self.ao_symbols = array_of_symbols(file_name)
         self.error_handler.set_inLan(self.inLan)
         self.error_handler.set_lex(self.lex)
+        self.error_handler.set_aos(self.ao_symbols)
 
         self.program()
 
-        self.ao_symbols.create_full_activity_record()
         self.inLan.close()
+        self.ao_symbols.close()
         self.createC = CreateC(file_name)
 
 
@@ -50,6 +51,7 @@ class Synt:
         label_start = self.inLan.write_list() #IL:Write the list of quads of this program(or procedure or function)
         self.ao_symbols.set_starting_quad(label_start)
         self.ao_symbols.undo_nesting_level()#Set the nesting level of the previous program
+        self.ao_symbols.write_activity_record()
 
     def declarations(self):
         word, ID = self.lex.start_read()
@@ -93,6 +95,7 @@ class Synt:
         if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "function", Id.IDENTIFIER, word, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "procedure", Id.IDENTIFIER, word, ID):
             block_name, ID = self.lex.start_read()  # Name of fuction or procedure
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
+            self.ao_symbols.add_function(block_name,word)
             self.ao_symbols.add_program(block_name,word)
             self.funcbody(block_name)
             self.error_handler.error_handle(error_types.ReturnStatementCheck, self.inLan.return_statement, word, block_name)
@@ -115,7 +118,7 @@ class Synt:
         self.formalparlist()
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
-
+        
     def formalparlist(self):
         word, ID = self.lex.start_read()
         self.lex.undo_read()
@@ -419,7 +422,7 @@ class Synt:
         arguments = self.actualpars()
         error_id = self.ao_symbols.undeclared_fun_or_proc(proc_name,"procedure",arguments)
         self.error_handler.error_handle(error_types.UndeclaredFuncOrProc, error_id,"procedure",proc_name,self.ao_symbols.current_program_name())
-        self.inLan.genquad("call",word,"_","_")
+        self.inLan.genquad("call",proc_name,"_","_")
         self.ao_symbols
 
     def print_stat(self):

@@ -143,10 +143,10 @@ class CreateC:
         return quad
     
     def create_variables(self):
-        if len(self.variables) > 0 or len(self.temp_variables) > 0:
+        l_args = len(self.arguments)
+        if len(self.variables) > l_args or len(self.temp_variables) > 0:
             self.file_c.write("int ")
             c_str = ""
-            l_args = len(self.arguments)
             if len(self.variables) > l_args:
                 for integer_ in range(l_args,len(self.variables)):
                     c_str = c_str + self.variables[integer_] + ","

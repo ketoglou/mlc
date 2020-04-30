@@ -8,16 +8,31 @@ program testStatements
 		input(a);
 		input(b);
 		forcase
-			when(a = 0): a := a + 10
-			when(a = 1): a := a + 20
-			when(a = 2): a := a + 30
-			when(a = 3): a := a + 40
-			default: print(a);
+			when(a = 10): a := a + 10
+			when(a = 20): a := a + 20
+			when(a = 30): a := a + 30
+			when(a = 40): a := a + 40
+			default: a := 1;
+		print(a);
 		
 		incase
-			when(b = 0): b := b + 100
-			when(b = 1): b := b + 200
-			when(b = 2): b := b + 300
-			when(b = 3): b := b + 400
+			when(b = 100): b := b + 100
+			when(b = 200): b := b + 200
+			when(b = 300): b := b + 300
+			when(b = 400): b := b + 400;
+			
+		a := 0;
+
+		while( a < 10){
+			a := a + 1;
+			print(a);
+			if( a = 5) then
+				print(a+1)
+			else
+				print(a-1);
+			d := 456
+		};
+		print(d)
+		
 	}
 }

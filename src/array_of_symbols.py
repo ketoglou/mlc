@@ -1,8 +1,11 @@
 #!/usr/bin/python3
 
+import os
+
 class array_of_symbols:
     def __init__(self,file_name):
-        self.file_name = file_name[0:-4] + "_array_of_symbols.txt"
+        self.fd_name = file_name[0:-4] + "_array_of_symbols.txt"
+        self.fd = open(self.fd_name,"w")
         self.list_of_programs = []
         self.current_nesting_level  = -1 #Used for array of symbols
 
@@ -10,32 +13,37 @@ class array_of_symbols:
         pa_record = program_activity_record(program_name,program_type)
         self.list_of_programs.append(pa_record)
         self.current_nesting_level += 1
-        self.list_of_programs[self.current_nesting_level].nesting_level = self.current_nesting_level
-    
+        self.list_of_programs[-1].nesting_level = self.current_nesting_level
+
     def add_variable(self,var):
-        if var not in self.list_of_programs[self.current_nesting_level].variables:
-            self.list_of_programs[self.current_nesting_level].variables.append(var)
+        if var not in self.list_of_programs[-1].variables:
+            self.list_of_programs[-1].variables.append(var)
             return True
         return False
 
     def set_temp_variables(self,t_vars):
-        self.list_of_programs[self.current_nesting_level].temporary_variables = t_vars
+        self.list_of_programs[-1].temporary_variables = t_vars
     
     def set_starting_quad(self,s_quad):
-        self.list_of_programs[self.current_nesting_level].starting_quad = s_quad
+        self.list_of_programs[-1].starting_quad = s_quad
 
     def add_argument(self,arg):
-        self.list_of_programs[self.current_nesting_level].arguments.append(arg)
+        self.list_of_programs[-1].arguments.append(arg)
     
+    def add_function(self,func_name, type_):
+        self.list_of_programs[-1].functions_names.append(func_name)
+        self.list_of_programs[-1].functions_types.append(type_)
+        
+
     def undo_nesting_level(self):
         self.current_nesting_level -= 1
 
     def current_program_name(self):
-        return self.list_of_programs[self.current_nesting_level].program_name
+        return self.list_of_programs[-1].program_name
 
     #Check if a variable is declared is the program
     def undeclared_variable(self,var):
-        if var not in self.list_of_programs[self.current_nesting_level].variables:
+        if var not in self.list_of_programs[-1].variables:
             return False
         return True #error undeclared variable
 
@@ -44,23 +52,24 @@ class array_of_symbols:
     #type_: It is used to see if a proc called with call command and if a function called in expression
     #arguments: Used to see if the arguments are correct
     def undeclared_fun_or_proc(self,name,type_called,arguments):
-        #Find program
-        program_id = -1
-        for i in range(0,len(self.list_of_programs)):
-            if self.list_of_programs[i].program_name == name and self.list_of_programs[i].nesting_level == (self.current_nesting_level+1):
-                program_id = i
+        #Find function
+        function_pos = -1
+        for i in range(0,len(self.list_of_programs[-1].functions_names)):
+            if name == self.list_of_programs[-1].functions_names[i]:
+                function_pos = i
                 break
-        
-        if program_id != -1:
-            pr = self.list_of_programs[program_id]
-            if pr.program_type == type_called:
-                if len(arguments) != len(pr.arguments):
+
+        if function_pos != -1:
+            fun_args = self.list_of_programs[-1].functions_arguments[function_pos]
+            #args_fun = self.list_of_programs[function_pos].functions_arguments
+            if self.list_of_programs[-1].functions_types[function_pos] == type_called:
+                if len(arguments) != len(fun_args):
                     #error length of arguments not enough
                     return 3
-                if len(arguments) == 0 and len(pr.arguments) == 0:
+                if len(arguments) == 0 and len(fun_args) == 0:
                     return 0 #no arguments
-                for arg in range(0,len(arguments)):
-                    if arguments[arg] != pr.arguments[arg]:
+                for arg in range(0,len(fun_args)):
+                    if arguments[arg] != fun_args[arg]:
                         #error expected argument self.arguments[name][arg] but find arguments[arg]
                         return 4
             else:
@@ -72,20 +81,31 @@ class array_of_symbols:
         return 0
 
     #Dimiourgoume to activity record kai vazoume offset sta panta wste na kseroume poso apexoun
-    def create_full_activity_record(self):
-        fd = open(self.file_name,"w")
-        for i in range((len(self.list_of_programs)-1),-1,-1):
-            pr = self.list_of_programs[i]
-            fd.writelines("Name:"+pr.program_name+"\n")
-            fd.write("Type:"+pr.program_type+"\n")
-            fd.write("Starting Quad:"+str(pr.starting_quad)+"\n")
-            fd.write("Nesting Level:"+str(pr.nesting_level)+"\n")
-            fd.write("Arguments:"+str(pr.arguments)+"\n")
-            fd.write("Variables:"+str(pr.variables)+"\n")
-            fd.write("Temporary Variables:"+str(pr.temporary_variables)+"\n")
-            fd.write("___\n")
-        fd.close()
+    def write_activity_record(self):
+        if len(self.list_of_programs) > 0:
+            pr = self.list_of_programs[-1]
+            self.fd.writelines("Name:"+pr.program_name+"\n")
+            self.fd.write("Type:"+pr.program_type+"\n")
+            self.fd.write("Starting Quad:"+str(pr.starting_quad)+"\n")
+            self.fd.write("Nesting Level:"+str(pr.nesting_level)+"\n")
+            self.fd.write("Arguments:"+str(pr.arguments)+"\n")
+            self.fd.write("Variables:"+str(pr.variables)+"\n")
+            self.fd.write("Temporary Variables:"+str(pr.temporary_variables)+"\n")
+            self.fd.write("___\n")
 
+            #Before delete this function,write its arguments to its parent function
+            for i in range(0,len(self.list_of_programs)):
+                if self.list_of_programs[i].nesting_level == (pr.nesting_level-1):
+                    self.list_of_programs[i].functions_arguments.append(pr.arguments)
+                    break
+
+            del self.list_of_programs[-1]
+    
+    def delete(self):
+        os.remove(self.fd_name)
+
+    def close(self):
+        self.fd.close()
 
 class program_activity_record:
 
@@ -95,6 +115,11 @@ class program_activity_record:
         self.program_name = program_name            #Program name
         self.program_type = program_type            #Type of program:"main","function","procedure"
         self.starting_quad = -1                     #Number of starting quad of this program
+
+        self.functions_names = []                    #Functions that have been declared
+        self.functions_types= []
+        self.functions_arguments = []               #Declared functions arguments
+
         self.arguments = []                         #Arguments of this program,leave empty for main.
         self.variables = []                         #Variables that have beed declared
         self.temporary_variables = -1               #The number indicates the maximum temporary variable (eg if it is 10 then variables form T_0 to T_10 used,if it is -1 no temporary variables used)

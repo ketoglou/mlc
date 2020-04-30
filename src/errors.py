@@ -38,7 +38,8 @@ class error_handler:
     def __init__(self):
         self.inLan = None #IntLang class is used to to delete the idermediate file in case of error or to take some info from array of symbols
         self.lex = None #Lex class is used to define number of line the error found
-
+        self.aos = None #Array of symbols class
+        
     #This error function to handle error it can return True(no error),False(error) or exit(fatal error)
     #It takes variable number of arguments,every type of error has its own number of arguments.
     #Arguments:
@@ -148,6 +149,8 @@ class error_handler:
     def exit_program(self):
         if self.inLan != None:
             self.inLan.delete()
+        if self.aos != None:
+            self.aos.delete()
         exit()
 
     #Error handler need Idermediate Language object to delete the idermediate file if an error occur
@@ -157,3 +160,6 @@ class error_handler:
     #Error handler need Lexer object to define the number of line an error occur
     def set_lex(self,lex):
         self.lex = lex
+
+    def set_aos(self,aos):
+        self.aos = aos

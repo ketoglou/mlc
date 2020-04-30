@@ -5,31 +5,46 @@ program program8
 	declare a,b;
 	declare c; //try re-declare a or b or c
 	
+	
 	//Try comment return in function will give you an error,functions must have at least one return
 	//Try change function and make it procedure and you will get an error,procedures must not have return
 	function funap(in c,inout d){
 		declare u,y,x;
-			function fun2(){
-				return 1
-			}
+		function fun2(){
+			return 1
+		}
 			
 		{
 			d := d + c - fun2();
 			return d
 		}
 	}
+	
+	function adel(in c,inout d){
+		{
+			d := c + 1;
+			return d+c
+		}
+	}
+	
+	function adela(){
+		return 2
+	}
+	
 	{
 		a := 0; //try an undeclared variable
 		//return 1; //uncomment that and you will get an error,we have return only in functions
 		input(a); //Give as input an integer
 		//if we comment exit statement from loop we will get a warning
+		a := adel(in 5,inout a);
+		print(a);
 		loop
 			{
 			a :=  funap(in 2,inout a) + 1; //try change funap to fun2 and you get an error,try change type of arguments or number of arguments
 			if(a >= 20) then
 				exit
 			else
-				print(a);
+				print(a)
 			}
 	}
 }
