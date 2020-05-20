@@ -4,7 +4,7 @@ import sys
 import os
 
 
-class IntLang:
+class int_lang:
     
     def __init__(self, file_name):
         self.fd_name = file_name[0:-4] + ".int"

@@ -3,7 +3,7 @@
 from finite_automata import State, Symbols, automata_states
 from errors import *
 
-class Lex:
+class lex:
 
     def __init__(self, file_name,error_handler):
         self.error_handler = error_handler

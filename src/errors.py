@@ -28,10 +28,11 @@ class error_types(Enum):
     UndeclaredVariable = 11     #Check for undeclared variable,fatal error if false
     RedaclaredVariable = 12     #Check for redeclared variable,fatal error if false
     UndeclaredFuncOrProc = 13   #Check for undeclared function or procedure,fatal error if false
-    ReturnStatementCheck = 14   #Check if we have at least one return(function) or no return(procedure)
+    RedeclaredFuncOrProc = 14   #Check for redeclared function or procedure,fatal error if false
 
 class warning_types(Enum):
     NoExitLoop = 1              #Used when no exit statement found at loop statement
+    ReturnStatementCheck = 2  #Check if we have at least one return(function) or no return(procedure)
 
 class error_handler:
 
@@ -57,7 +58,7 @@ class error_handler:
     #UndeclaredVariable: args[0] = check(boolean),args[1] = variable,args[2] = program_that_contain_this_variable
     #RedeclaredVariable: args[0] = check(boolean),args[1] = variable,args[2] = program_that_contain_this_variable
     #UndeclaredFuncOrProc: args[0] = number_of_error,args[1] = type(function or procedure),args[2] = name(of function or procedure),args[3] = program_contain_this_func_or_proc
-    #ReturnStatementCheck: args[0] = number_of_line_found_return_or_-1_if_not_found,args[1] = type(function or procedure),args[2] = name(of function or procedure)
+    #RedeclaredFuncOrProc : args[0] = check(boolean), args[1] = type , args[2] = name
     def error_handle(self,error_type, *args):
         if error_type == error_types.FileArgument:
             print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +
@@ -114,15 +115,10 @@ class error_handler:
                 return True
             if args[0] == 1:
                 print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC + "undeclared first use of " + args[1] + " "+ args[2] + " ,at line:" + str(self.lex.file_line))
-            elif args[0] == 2:
-                proc_or_fun = "procedure"
-                if proc_or_fun == args[1]:
-                    proc_or_fun = "function"
-                print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC + proc_or_fun +" " + args[2] + " called as " + args[1] + " ,at line:" + str(self.lex.file_line))
-            elif args[0] == 3:
-                print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC + "wrong number of arguments for "+args[1]+" "+args[2]+ " ,at line:" + str(self.lex.file_line))
-            elif args[0] == 4:
-                print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC + args[1] + " " + args[2]+ " wrong type of argument "  + ", at line:" + str(self.lex.file_line))
+        elif error_type == error_types.RedeclaredFuncOrProc:
+            if args[0] == True:
+                return True
+            print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +"redeclared " + args[1] + " "+ args[2] + " ,at line:" + str(self.lex.file_line))
         elif error_type == error_types.ReturnStatementCheck:
             if args[0] == -1 and args[1] == "function" :
                 print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +"no return statement found at function "+args[2])
@@ -139,10 +135,20 @@ class error_handler:
         self.exit_program() #If we get here a fatal error occur
 
     #NoExitLoop: arg[0] = check_if_exist(boolean), args[1] = name_of_program
+    #ReturnStatementCheck: args[0] = number_of_line_found_return_or_-1_if_not_found,args[1] = type(function or procedure),args[2] = name(of function or procedure)
     def warning_handle(self,warning_type,*args):
         if warning_type == warning_types.NoExitLoop:
             if args[0] == False:
                 print(bcolors.WARNING+"mlc warning:"+bcolors.ENDC +"no exit statement found at loop at "+args[1])
+        elif warning_type == warning_types.ReturnStatementCheck:
+            if args[0] == -1 and args[1] == "function" :
+                print(bcolors.WARNING+"mlc warning:"+bcolors.ENDC +"no return statement found at function "+args[2])
+            elif args[0] != -1 and args[1] == "procedure":
+                print(bcolors.WARNING+"mlc warning:"+bcolors.ENDC +"return statement found at procedure "+args[2]+ ", at line:" + str(args[0]))
+            elif args[0] != -1 and args[1] == "main":
+                print(bcolors.WARNING+"mlc warning:"+bcolors.ENDC +"return statement found at main program "+args[2]+ ", at line:" + str(args[0]))
+            else:
+                return True
 
 
     #This function used when an error occur and the idermediate file exist,so it delete it

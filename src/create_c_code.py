@@ -3,7 +3,7 @@
 import string
 import ast
 
-class CreateC:
+class create_c_code:
 
     def __init__(self, file_name):
         name =  file_name[0:-4]
