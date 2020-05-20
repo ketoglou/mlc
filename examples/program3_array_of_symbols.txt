@@ -1,0 +1,64 @@
+Name:testBlocks
+Type:main
+Starting Quad:47
+Nesting Level:0
+Arguments:[]
+Variables:['a', 'b', 'c', 'd']
+Temporary Variables:8
+___
+Name:fun1
+Type:function
+Starting Quad:2
+Nesting Level:1
+Arguments:[]
+Variables:['a']
+Temporary Variables:0
+___
+Name:fun1
+Type:function
+Starting Quad:6
+Nesting Level:1
+Arguments:['in']
+Variables:['v', 'a']
+Temporary Variables:3
+___
+Name:block1
+Type:procedure
+Starting Quad:45
+Nesting Level:1
+Arguments:['inout', 'inout', 'in']
+Variables:['a', 'b', 'c']
+Temporary Variables:0
+___
+Name:block2
+Type:function
+Starting Quad:28
+Nesting Level:2
+Arguments:['in']
+Variables:['z', 'e', 'f', 'g']
+Temporary Variables:0
+___
+Name:block3
+Type:procedure
+Starting Quad:26
+Nesting Level:3
+Arguments:[]
+Variables:[]
+Temporary Variables:0
+___
+Name:block4
+Type:function
+Starting Quad:19
+Nesting Level:4
+Arguments:['in']
+Variables:['k']
+Temporary Variables:1
+___
+Name:block5
+Type:procedure
+Starting Quad:31
+Nesting Level:2
+Arguments:['in', 'in']
+Variables:['a', 'b']
+Temporary Variables:2
+___
