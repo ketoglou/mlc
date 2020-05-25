@@ -26,7 +26,7 @@ class error_types(Enum):
     SyntaxIdFatal = 9           #Matching ids,fatal error if false
     SyntaxWordFatal = 10        #Wrong word,fatal error if false
     UndeclaredVariable = 11     #Check for undeclared variable,fatal error if false
-    RedaclaredVariable = 12     #Check for redeclared variable,fatal error if false
+    RedeclaredVariable = 12     #Check for redeclared variable,fatal error if false
     UndeclaredFuncOrProc = 13   #Check for undeclared function or procedure,fatal error if false
     RedeclaredFuncOrProc = 14   #Check for redeclared function or procedure,fatal error if false
 
@@ -106,7 +106,7 @@ class error_handler:
             if args[0] == True:
                 return True
             print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +"Undeclared variable: " + args[1] + " ,belong to: "+ args[2] + " ,at line:" + str(self.lex.file_line))
-        elif error_type == error_types.RedaclaredVariable:
+        elif error_type == error_types.RedeclaredVariable:
             if args[0] == True:
                 return True
             print(bcolors.FAIL+bcolors.BOLD+"mlc error:"+bcolors.ENDC +"Redeclared variable: " + args[1] + " ,belong to: "+ args[2] + " ,at line:" + str(self.lex.file_line))
@@ -149,6 +149,9 @@ class error_handler:
                 print(bcolors.WARNING+"mlc warning:"+bcolors.ENDC +"return statement found at main program "+args[2]+ ", at line:" + str(args[0]))
             else:
                 return True
+        else:
+            #Normally we not end up here,except the warning_type is not defined
+            print(bcolors.WARNING+"mlc warning:"+bcolors.ENDC +"Undefined warning!")
 
 
     #This function used when an error occur and the idermediate file exist,so it delete it

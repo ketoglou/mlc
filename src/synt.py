@@ -8,7 +8,8 @@ from create_c_code import create_c_code
 from finite_automata import Id,reserved_words
 from errors import *
 from array_of_symbols import array_of_symbols,program_activity_record
-from mips_assembly import mips_assebly
+from mips_assembly import mips_assembly
+import gc
 
 class synt:
 
@@ -24,11 +25,24 @@ class synt:
         self.aos_pos = -1 #Position in array of symbol of this program(used for aos class)
         self.program()
         
+        #Free some memory(no need them anymore)
+        del self.lex
+        del self.error_handler
+        gc.collect() #Force garbage collector to free memory
+
+        #Save array of symbols and idermediate language
+        self.ao_symbols.calc_framelength()
         self.ao_symbols.write_aos()
-        self.inLan.close()
         self.ao_symbols.close()
-        self.createC = create_c_code(file_name)
-        self.mips_ass = mips_assebly(file_name)
+        self.inLan.close()
+
+        #Free memory
+        del self.inLan
+        gc.collect() #Force garbage collector to free memory
+
+        #Create C and MIPS code
+        #self.createC = create_c_code(file_name)
+        self.mips_ass = mips_assembly(file_name,self.ao_symbols.list_of_programs)
 
 
     def program(self):
@@ -81,13 +95,13 @@ class synt:
             return
         self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
         ad_var = self.ao_symbols.add_variable(word) #Append the variable list of the current program
-        self.error_handler.error_handle(error_types.RedaclaredVariable, ad_var, word, self.ao_symbols.current_program_name(self.aos_pos)) 
+        self.error_handler.error_handle(error_types.RedeclaredVariable, ad_var, word, self.ao_symbols.current_program_name(self.aos_pos)) 
         word, ID = self.lex.start_read()
         while self.error_handler.error_handle(error_types.SyntaxCheckWordId, ",", Id.SEPERATOR, word, ID):
             word, ID = self.lex.start_read()  # variable in varlist
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
             ad_var = self.ao_symbols.add_variable(word) #Append the variable list of the current program
-            self.error_handler.error_handle(error_types.RedaclaredVariable, ad_var, word, self.ao_symbols.current_program_name(self.aos_pos)) 
+            self.error_handler.error_handle(error_types.RedeclaredVariable, ad_var, word, self.ao_symbols.current_program_name(self.aos_pos)) 
             word, ID = self.lex.start_read()  # expected comma
         self.lex.undo_read()
         self.varlist()
@@ -146,7 +160,7 @@ class synt:
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
             self.ao_symbols.add_temporary_argument(in_or_inout,word) #Append the arguments list of the current program
         else:
-            self.error_handler.error_handle(error_types.SyntaxWordFatal, "in or inout", word)  # Error exit
+            self.error_handler.error_handle(error_types.SyntaxWordFatal, "in or inout", in_or_inout)  # Error exit
 
     def statements(self):
         word, ID = self.lex.start_read()

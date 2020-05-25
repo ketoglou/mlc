@@ -56,10 +56,10 @@ class int_lang:
             #if we are in the main program then write halt before end_block
             if len(self.programs_list) == 1:
                 self.fd.write(str(self.nextquad())+":halt,_,_,_\n")  #write halt
-                self.write_first_line("0:jump,_,_,"+str(begin_block_num+1)+"\n")  #write jump to main
+                self.write_first_line("0:jump,_,_,"+str(begin_block_num)+"\n")  #write jump to main
             self.fd.write(str(self.nextquad())+":"+li[1]+"\n")  #write end_block
             del self.programs_list[-1] #remove last list
-            return begin_block_num + 1 #return start label of the program(for array of symbols)
+            return begin_block_num  #return start label of the program(for array of symbols)
 
     #Creates next quad for the current program(or function or procedure)
     def genquad(self,op,x,y,z):

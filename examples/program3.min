@@ -5,9 +5,11 @@ program testBlocks
 	declare a,b,c,d;
       
 	function fun1(){
-		declare a;
+		declare a,o;
 		{
-		  a := 1;
+		  a := -1;
+		  if(a > 2) then
+			a := a + 1;
 		  return a;
 		}
 	}
@@ -29,12 +31,15 @@ program testBlocks
 			procedure block3(){
 				function block4(in k){
 					{
-  					  a := block2(in k);
+  					  a := fun1(in k);
 					  return k;
 					}
 				}
 			}
-			return 2
+			{
+			  call block3();
+			  return 2
+			}
 		}
 		procedure block5(in a,in b){
 			{

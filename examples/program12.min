@@ -1,0 +1,28 @@
+program main
+{
+    declare A;
+    
+    function f1()
+    {
+        declare B;
+        
+        function f2()
+        {
+            {
+                B := 1;
+                return 1;
+            }
+        }
+
+        {
+            A := f2();
+            return A;
+        }
+    }
+
+    //main
+    {
+        print(f1());
+        print(A);
+    }
+}
