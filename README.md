@@ -3,9 +3,9 @@ This is a minimal++ language compiler.
 <img src="/images/logo.png" width="500" height="500">  
 ## Usage:
 ```
-python3 mlc.py --help                      : Print help information<br>
-python3 mlc.py -save-temps program.min     : Does not delete idermediate,array of symbols,C files<br>
-python3 mlc.py program.min                 : Delete idermediate,array of symbols,C files<br>
+python3 mlc.py --help                      : Print help information
+python3 mlc.py -save-temps program.min     : Does not delete idermediate,array of symbols,C files
+python3 mlc.py program.min                 : Delete idermediate,array of symbols,C files
 ```
 
 minimal++ produce assembly language for MIPS but produce and other files
