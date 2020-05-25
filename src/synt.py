@@ -21,7 +21,7 @@ class synt:
         self.error_handler.set_inLan(self.inLan)
         self.error_handler.set_lex(self.lex)
         self.error_handler.set_aos(self.ao_symbols)
-
+        self.exit_can_used = False #exit command can be used only inside loop
         self.aos_pos = -1 #Position in array of symbol of this function(used for aos class)
         self.program()
         
@@ -190,11 +190,10 @@ class synt:
             self.doublewhile_stat()
         elif word == "loop":
             self.loop_stat()
-        elif word == "exit":
+        elif word == "exit" and self.exit_can_used == True:
             word, ID = self.lex.start_read()
             self.inLan.exit_statement = True
             self.inLan.genquad("exit","_","_","_")
-            return
         elif word == "forcase":
             self.forcase_stat()
         elif word == "incase":
@@ -207,6 +206,7 @@ class synt:
             self.input_stat()
         elif word == "print":
             self.print_stat()
+
 
     def assignment_stat(self):
         assign, ID = self.lex.start_read()
@@ -340,6 +340,7 @@ class synt:
 
 
     def loop_stat(self):
+        self.exit_can_used  = True
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "loop", Id.IDENTIFIER, word,ID)
         self.inLan.exit_statement = False
@@ -351,6 +352,8 @@ class synt:
         self.inLan.genquad("jump","_","_","-"+str(jump_beginning))
         self.inLan.special_loop(loop_start_pos,loop_end_pos)
         self.error_handler.warning_handle(warning_types.NoExitLoop,self.inLan.exit_statement, self.ao_symbols.current_function_name(self.aos_pos))
+        self.inLan.exit_statement = False
+        self.exit_can_used  = False
 
     def forcase_stat(self):
         word, ID = self.lex.start_read()
