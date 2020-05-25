@@ -8,7 +8,7 @@ python3 mlc.py -save-temps program.min     : Does not delete idermediate,array o
 python3 mlc.py program.min                 : Delete idermediate,array of symbols,C files<br>
 ```
 
-minimal++ produce assembly language for MIPS but produce and other files<br>
-if the -save-temps argument is passed.It produce the intermediate file,the<br>
-array of symbols and a file with the program in C for test(does not work with<br>
+minimal++ produce assembly language for MIPS but produce and other files
+if the -save-temps argument is passed.It produce the intermediate file,the
+array of symbols and a file with the program in C for test(does not work with
 nesting functions)<br>
