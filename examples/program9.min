@@ -1,5 +1,6 @@
 
 program FibRecursiveProg{
+    declare a;
     function fib(in n){
         {
             if (n = 1) then
@@ -14,6 +15,10 @@ program FibRecursiveProg{
         }
     }
 
-    print(fib(in 10))
+    //main
+    {
+      a := fib(in 10);
+      print(a);
+    }
 
 }
