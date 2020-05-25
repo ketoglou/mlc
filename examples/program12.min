@@ -1,4 +1,4 @@
-program main
+program main2
 {
     declare A;
     

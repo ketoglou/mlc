@@ -7,13 +7,13 @@ from int_lang import int_lang
 from create_c_code import create_c_code
 from finite_automata import Id,reserved_words
 from errors import *
-from array_of_symbols import array_of_symbols,program_activity_record
+from array_of_symbols import array_of_symbols,function_activity_record
 from mips_assembly import mips_assembly
 import gc
 
 class synt:
 
-    def __init__(self, file_name):
+    def __init__(self, file_name, save_temps):
         self.error_handler = error_handler()
         self.lex = lex(file_name,self.error_handler)
         self.inLan = int_lang(file_name)
@@ -22,7 +22,7 @@ class synt:
         self.error_handler.set_lex(self.lex)
         self.error_handler.set_aos(self.ao_symbols)
 
-        self.aos_pos = -1 #Position in array of symbol of this program(used for aos class)
+        self.aos_pos = -1 #Position in array of symbol of this function(used for aos class)
         self.program()
         
         #Free some memory(no need them anymore)
@@ -36,13 +36,15 @@ class synt:
         self.ao_symbols.close()
         self.inLan.close()
 
-        #Free memory
-        del self.inLan
-        gc.collect() #Force garbage collector to free memory
+        #Create Assembly MIPS
+        self.mips_ass = mips_assembly(file_name,self.ao_symbols.list_of_functions)
 
         #Create C and MIPS code
-        #self.createC = create_c_code(file_name)
-        self.mips_ass = mips_assembly(file_name,self.ao_symbols.list_of_programs)
+        if save_temps == False:
+            self.inLan.delete()
+            self.ao_symbols.delete()
+        else:
+            self.createC = create_c_code(file_name,self.ao_symbols.list_of_functions)
 
 
     def program(self):
@@ -50,7 +52,7 @@ class synt:
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "program", Id.IDENTIFIER,word, ID)
         block_name, ID = self.lex.start_read()  # program name
         self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-        self.ao_symbols.add_program(block_name,"main",[]) #Create a program object for array of symbols
+        self.ao_symbols.add_function(block_name,"main",[]) #Create a program(main) object for array of symbols
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "{", Id.GROUPING, word, ID)
         self.block(block_name)
@@ -60,17 +62,17 @@ class synt:
         self.inLan.return_statement = -1
 
     def block(self,block_name):
-        self.inLan.make_list(block_name) #IL:Create a list for all the quads of this program(or procedure or function)
-        temp_aos_pos = self.ao_symbols.current_program_pos #Position in array of symbol of this program(used for aos class)
+        self.inLan.make_list(block_name) #IL:Create a list for all the quads of this function(or procedure or function)
+        temp_aos_pos = self.ao_symbols.current_function_pos #Position in array of symbol of this function(used for aos class)
         self.declarations()
         self.subprograms()
         self.aos_pos = temp_aos_pos
         self.statements()
         self.ao_symbols.set_temp_variables(self.inLan.temp_var_value, self.aos_pos)
-        self.inLan.reset_newtemp() #Reset temporary values so a new program can use them
-        label_start = self.inLan.write_list() #IL:Write the list of quads of this program(or procedure or function)
+        self.inLan.reset_newtemp() #Reset temporary values so a new function can use them
+        label_start = self.inLan.write_list() #IL:Write the list of quads of this function(or procedure or function)
         self.ao_symbols.set_starting_quad(label_start, self.aos_pos)
-        self.ao_symbols.undo_nesting_level()#Set the nesting level of the previous program
+        self.ao_symbols.undo_nesting_level()#Set the nesting level of the previous function
         
 
     def declarations(self):
@@ -94,14 +96,14 @@ class synt:
             self.lex.undo_read()
             return
         self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-        ad_var = self.ao_symbols.add_variable(word) #Append the variable list of the current program
-        self.error_handler.error_handle(error_types.RedeclaredVariable, ad_var, word, self.ao_symbols.current_program_name(self.aos_pos)) 
+        ad_var = self.ao_symbols.add_variable(word) #Append the variable list of the current function
+        self.error_handler.error_handle(error_types.RedeclaredVariable, ad_var, word, self.ao_symbols.current_function_name(self.aos_pos)) 
         word, ID = self.lex.start_read()
         while self.error_handler.error_handle(error_types.SyntaxCheckWordId, ",", Id.SEPERATOR, word, ID):
             word, ID = self.lex.start_read()  # variable in varlist
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-            ad_var = self.ao_symbols.add_variable(word) #Append the variable list of the current program
-            self.error_handler.error_handle(error_types.RedeclaredVariable, ad_var, word, self.ao_symbols.current_program_name(self.aos_pos)) 
+            ad_var = self.ao_symbols.add_variable(word) #Append the variable list of the current function
+            self.error_handler.error_handle(error_types.RedeclaredVariable, ad_var, word, self.ao_symbols.current_function_name(self.aos_pos)) 
             word, ID = self.lex.start_read()  # expected comma
         self.lex.undo_read()
         self.varlist()
@@ -111,22 +113,22 @@ class synt:
             pass
 
     def subprogram(self):
-        program_type, ID = self.lex.start_read()
-        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "function", Id.IDENTIFIER, program_type, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "procedure", Id.IDENTIFIER, program_type, ID):
+        function_type, ID = self.lex.start_read()
+        if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "function", Id.IDENTIFIER, function_type, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "procedure", Id.IDENTIFIER, function_type, ID):
             block_name, ID = self.lex.start_read()  # Name of fuction or procedure
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-            self.funcbody(block_name,program_type)
-            self.error_handler.warning_handle(warning_types.ReturnStatementCheck, self.inLan.return_statement, program_type, block_name)
+            self.funcbody(block_name,function_type)
+            self.error_handler.warning_handle(warning_types.ReturnStatementCheck, self.inLan.return_statement, function_type, block_name)
             self.inLan.return_statement = -1
             return True
         self.lex.undo_read()
         return False
 
-    def funcbody(self,block_name,program_type):
+    def funcbody(self,block_name,function_type):
         self.formalpars()
-        program_arguments = self.ao_symbols.get_temporary_arguments()
-        error_check = self.ao_symbols.add_program(block_name,program_type,program_arguments)  #Add this function or procedure the array of symbols
-        self.error_handler.error_handle(error_types.RedeclaredFuncOrProc, error_check, program_type, block_name) #Check if its redeclared in same nesting level
+        function_arguments = self.ao_symbols.get_temporary_arguments()
+        error_check = self.ao_symbols.add_function(block_name,function_type,function_arguments)  #Add this function or procedure the array of symbols
+        self.error_handler.error_handle(error_types.RedeclaredFuncOrProc, error_check, function_type, block_name) #Check if its redeclared in same nesting level
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "{", Id.GROUPING, word, ID)
         self.block(block_name)
@@ -158,7 +160,7 @@ class synt:
         if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "in", Id.IDENTIFIER, in_or_inout, ID) or self.error_handler.error_handle(error_types.SyntaxCheckWordId, "inout", Id.IDENTIFIER, in_or_inout, ID):
             word, ID = self.lex.start_read()
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
-            self.ao_symbols.add_temporary_argument(in_or_inout,word) #Append the arguments list of the current program
+            self.ao_symbols.add_temporary_argument(in_or_inout,word) #Append the arguments list of the current function
         else:
             self.error_handler.error_handle(error_types.SyntaxWordFatal, "in or inout", in_or_inout)  # Error exit
 
@@ -212,7 +214,7 @@ class synt:
         #If the variable is not a temporary maded by the compiler then check if it is declared
         if assign.split("_")[0] != "T":
             un_var = self.ao_symbols.undeclared_variable(assign, self.aos_pos) #Check for undeclared variable
-            self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,assign,self.ao_symbols.current_program_name(self.aos_pos))
+            self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,assign,self.ao_symbols.current_function_name(self.aos_pos))
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ":=", Id.EQUAL, word, ID)
         x = self.expression()
@@ -224,11 +226,11 @@ class synt:
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
 
-        if_cond_start_pos = self.inLan.relative_program_pos() #IL:starting position of if statement
+        if_cond_start_pos = self.inLan.relative_function_pos() #IL:starting position of if statement
         exp_list = self.condition(False) #IL:get the condition quads
         self.inLan.backpatch(exp_list,"true","DISTANCE","RELOP") #IL:set the relops of condition quads that jump to true code 
         self.inLan.add_condition(exp_list,if_cond_start_pos) #IL:add the condition to the code
-        if_cond_end_pos = self.inLan.relative_program_pos() #IL:starting position of if statement
+        if_cond_end_pos = self.inLan.relative_function_pos() #IL:starting position of if statement
 
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
@@ -237,21 +239,21 @@ class synt:
 
         self.statements()
 
-        jump_false = self.inLan.relative_program_pos() - if_cond_end_pos + 1
+        jump_false = self.inLan.relative_function_pos() - if_cond_end_pos + 1
         if self.elsepart():
             jump_false += 1
         self.inLan.backpatch(jump_false,if_cond_start_pos,if_cond_end_pos,"JUMP-FALSE")
 
     def elsepart(self):
         word, ID = self.lex.start_read()
-        else_begin_pos = self.inLan.relative_program_pos() #IL:Get the begin address outside if statement
+        else_begin_pos = self.inLan.relative_function_pos() #IL:Get the begin address outside if statement
         #IL:If we have else outside if then we add a jump quad(for jump outside else if the if is true)
         #add add statements.Either we have else or not we return the position outside if.
         if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "else", Id.IDENTIFIER, word, ID):
             self.inLan.genquad("jump","_","_","_") #IL:add jump at the end of if
             self.statements() #IL:add new statements inside else
-            outside_if = self.inLan.relative_program_pos() - else_begin_pos #IL:calculate the relative position for the jump quad to jump
-            self.inLan.programs_list[-1][else_begin_pos] = "jump,_,_,+"+str(outside_if) #IL:edit the jump quad and add the relative position
+            outside_if = self.inLan.relative_function_pos() - else_begin_pos #IL:calculate the relative position for the jump quad to jump
+            self.inLan.functions_list[-1][else_begin_pos] = "jump,_,_,+"+str(outside_if) #IL:edit the jump quad and add the relative position
             return True
         else:
             self.lex.undo_read()
@@ -263,18 +265,18 @@ class synt:
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
 
-        while_cond_start_pos = self.inLan.relative_program_pos() #IL:starting position of while statement
+        while_cond_start_pos = self.inLan.relative_function_pos() #IL:starting position of while statement
         exp_list = self.condition(False) #IL:get the condition quads
         self.inLan.backpatch(exp_list,"true","DISTANCE","RELOP") #IL:set the relops of condition quads that jump to true code 
         self.inLan.add_condition(exp_list,while_cond_start_pos) #IL:add the condition to the code
-        while_cond_end_pos = self.inLan.relative_program_pos() #IL:ending position of while statement 
+        while_cond_end_pos = self.inLan.relative_function_pos() #IL:ending position of while statement 
          
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
 
         self.statements()
 
-        jump_false = self.inLan.relative_program_pos() - while_cond_end_pos + 2 #IL:get the position outside while
+        jump_false = self.inLan.relative_function_pos() - while_cond_end_pos + 2 #IL:get the position outside while
         self.inLan.genquad("jump","_","_","-"+str(jump_false))
         self.inLan.backpatch(jump_false,while_cond_start_pos,while_cond_end_pos,"JUMP-FALSE")
 
@@ -291,26 +293,26 @@ class synt:
         #T_0 = 1                        T_0 = 2
         #jump to condition              jump to condition
         temp_var = self.inLan.newtemp() #IL:Create new temporary value
-        temp_val_address = self.inLan.relative_program_pos() #IL:Get position of the quad below
+        temp_val_address = self.inLan.relative_function_pos() #IL:Get position of the quad below
         self.inLan.genquad(":=","0","_",temp_var) #IL:Give value 0 in the temp value
 
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
         
-        cond_start_pos = self.inLan.relative_program_pos()
+        cond_start_pos = self.inLan.relative_function_pos()
         cond = self.condition(False)
         self.inLan.backpatch(cond,"true","DISTANCE","RELOP") #IL:set the relops of condition quads that jump to true code 
         self.inLan.add_condition(cond,cond_start_pos) #IL:add the condition to the code
-        cond_end_pos = self.inLan.relative_program_pos()
+        cond_end_pos = self.inLan.relative_function_pos()
 
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
 
         #1st statement
-        start_stat1 = self.inLan.relative_program_pos()
+        start_stat1 = self.inLan.relative_function_pos()
         self.inLan.genquad("=",temp_var,"2","exitDW") #Create the if for stat1
         self.statements()
         self.inLan.genquad(":=","1","_",temp_var) #Set temp var = 1
-        jump_to_cond = self.inLan.relative_program_pos() - cond_start_pos 
+        jump_to_cond = self.inLan.relative_function_pos() - cond_start_pos 
         self.inLan.genquad("jump","_","_","-"+str(jump_to_cond)) #IL:Jump to condition from stat1
 
         
@@ -318,20 +320,20 @@ class synt:
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "else", Id.IDENTIFIER, word, ID)
 
         #Set condition jump to false
-        jump_false = self.inLan.relative_program_pos() - cond_end_pos + 1 
+        jump_false = self.inLan.relative_function_pos() - cond_end_pos + 1 
         self.inLan.backpatch(jump_false,cond_start_pos,cond_end_pos,"JUMP-FALSE")
 
         #2nd statement
-        start_stat2 = self.inLan.relative_program_pos()
+        start_stat2 = self.inLan.relative_function_pos()
         self.inLan.genquad("=",temp_var,"1","exitDW") #Create the if for stat2
         self.statements()
         self.inLan.genquad(":=","2","_",temp_var) #Set temp var = 2
-        jump_to_cond = self.inLan.relative_program_pos() - cond_start_pos 
+        jump_to_cond = self.inLan.relative_function_pos() - cond_start_pos 
         self.inLan.genquad("jump","_","_","-"+str(jump_to_cond)) #IL:Jump to condition frpm stat2
        
         #Set the "exitDW" of quads to this position(outside doublewhile)
-        jump_to_cond1 = self.inLan.relative_program_pos() - start_stat1
-        jump_to_cond2 = self.inLan.relative_program_pos() - start_stat2
+        jump_to_cond1 = self.inLan.relative_function_pos() - start_stat1
+        jump_to_cond2 = self.inLan.relative_function_pos() - start_stat2
         self.inLan.special_doublewhile(start_stat1,jump_to_cond1)
         self.inLan.special_doublewhile(start_stat2,jump_to_cond2)
 
@@ -342,31 +344,31 @@ class synt:
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "loop", Id.IDENTIFIER, word,ID)
         self.inLan.exit_statement = False
 
-        loop_start_pos = self.inLan.relative_program_pos()
+        loop_start_pos = self.inLan.relative_function_pos()
         self.statements()
-        loop_end_pos = self.inLan.relative_program_pos()
+        loop_end_pos = self.inLan.relative_function_pos()
         jump_beginning = loop_end_pos - loop_start_pos
         self.inLan.genquad("jump","_","_","-"+str(jump_beginning))
         self.inLan.special_loop(loop_start_pos,loop_end_pos)
-        self.error_handler.warning_handle(warning_types.NoExitLoop,self.inLan.exit_statement, self.ao_symbols.current_program_name(self.aos_pos))
+        self.error_handler.warning_handle(warning_types.NoExitLoop,self.inLan.exit_statement, self.ao_symbols.current_function_name(self.aos_pos))
 
     def forcase_stat(self):
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "forcase", Id.IDENTIFIER,word, ID)
         word, ID = self.lex.start_read()
 
-        forcase_start_pos = self.inLan.relative_program_pos() #IL:Get the starting position of forcase
+        forcase_start_pos = self.inLan.relative_function_pos() #IL:Get the starting position of forcase
 
         while self.error_handler.error_handle(error_types.SyntaxCheckWordId, "when", Id.IDENTIFIER, word, ID):
             
             word, ID = self.lex.start_read()
             self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
 
-            cond_start_pos = self.inLan.relative_program_pos()
+            cond_start_pos = self.inLan.relative_function_pos()
             exp_list = self.condition(False)
             self.inLan.backpatch(exp_list,"true","DISTANCE","RELOP") #IL:set the relops of condition quads that jump to true code 
             self.inLan.add_condition(exp_list,cond_start_pos) #IL:add the condition to the code
-            cond_end_pos = self.inLan.relative_program_pos() #IL:ending position of while statement 
+            cond_end_pos = self.inLan.relative_function_pos() #IL:ending position of while statement 
 
             word, ID = self.lex.start_read()
             self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word,ID)
@@ -375,9 +377,9 @@ class synt:
 
             self.statements()
 
-            jump_to_begin = self.inLan.relative_program_pos() - forcase_start_pos #IL:positions from beginning of forcase
+            jump_to_begin = self.inLan.relative_function_pos() - forcase_start_pos #IL:positions from beginning of forcase
             self.inLan.genquad("jump","_","_","-"+str(jump_to_begin))
-            jump_false = self.inLan.relative_program_pos() - cond_end_pos + 1
+            jump_false = self.inLan.relative_function_pos() - cond_end_pos + 1
             self.inLan.backpatch(jump_false,cond_start_pos,cond_end_pos,"JUMP-FALSE")
 
             word, ID = self.lex.start_read()
@@ -396,18 +398,18 @@ class synt:
         #is true then the variable gets the value of 1.At the end of incase we check to see
         #if variable is 1 then we jump at the begin of incase,if variable is 0 we continue outside incase.
         temp_var = self.inLan.newtemp() #IL:Create new temporary value
-        temp_val_address = self.inLan.relative_program_pos() #IL:Get position of the quad below
+        temp_val_address = self.inLan.relative_function_pos() #IL:Get position of the quad below
         self.inLan.genquad(":=","0","_",temp_var) #IL:Give value 0 in the temp value
 
         while self.error_handler.error_handle(error_types.SyntaxCheckWordId, "when", Id.IDENTIFIER, word, ID):
             word, ID = self.lex.start_read()
             self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, "(", Id.GROUPING, word, ID)
 
-            cond_start_pos = self.inLan.relative_program_pos()
+            cond_start_pos = self.inLan.relative_function_pos()
             cond = self.condition(False)
             self.inLan.backpatch(cond,"true","DISTANCE","RELOP") #IL:set the relops of condition quads that jump to true code 
             self.inLan.add_condition(cond,cond_start_pos) #IL:add the condition to the code
-            cond_end_pos = self.inLan.relative_program_pos()
+            cond_end_pos = self.inLan.relative_function_pos()
 
             word, ID = self.lex.start_read()
             self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word,ID)
@@ -417,12 +419,12 @@ class synt:
             self.statements()
             self.inLan.genquad(":=","1","_",temp_var) #IL:Set temp var value to 1
             
-            jump_false = self.inLan.relative_program_pos() - cond_end_pos + 1
+            jump_false = self.inLan.relative_function_pos() - cond_end_pos + 1
             self.inLan.backpatch(jump_false,cond_start_pos,cond_end_pos,"JUMP-FALSE")
 
             word, ID = self.lex.start_read()
 
-        jump_to_begin = self.inLan.relative_program_pos() - temp_val_address #IL:positions from beginning of incase
+        jump_to_begin = self.inLan.relative_function_pos() - temp_val_address #IL:positions from beginning of incase
         self.inLan.genquad("=",temp_var,"1","-"+str(jump_to_begin))
         self.lex.undo_read()
 
@@ -441,7 +443,7 @@ class synt:
         self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
         arguments = self.actualpars()
         error_id = self.ao_symbols.undeclared_fun_or_proc(proc_name,"procedure",arguments,self.aos_pos)
-        self.error_handler.error_handle(error_types.UndeclaredFuncOrProc, error_id,"procedure",proc_name,self.ao_symbols.current_program_name(self.aos_pos))
+        self.error_handler.error_handle(error_types.UndeclaredFuncOrProc, error_id,"procedure",proc_name,self.ao_symbols.current_function_name(self.aos_pos))
         self.inLan.genquad("call",proc_name,"_","_")
 
     def print_stat(self):
@@ -463,7 +465,7 @@ class synt:
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
         un_var = self.ao_symbols.undeclared_variable(word, self.aos_pos) #Check for undeclared variable
-        self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.ao_symbols.current_program_name(self.aos_pos))
+        self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.ao_symbols.current_function_name(self.aos_pos))
         self.inLan.genquad("inp",word,"_","_")
         word, ID = self.lex.start_read()
         self.error_handler.error_handle(error_types.SyntaxCheckWordIdFatal, ")", Id.GROUPING, word, ID)
@@ -497,14 +499,14 @@ class synt:
             #If the variable is not a temporary maded by the compiler then check if it is declared
             if w.split("_")[0] != "T" and (not self.inLan.isInt(w)):
                 un_var = self.ao_symbols.undeclared_variable(w, self.aos_pos) #Check for undeclared variable
-                self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,w,self.ao_symbols.current_program_name(self.aos_pos))
+                self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,w,self.ao_symbols.current_function_name(self.aos_pos))
             self.inLan.genquad("par",w,"CV","_")
             return "in"
         elif self.error_handler.error_handle(error_types.SyntaxCheckWordId, "inout", Id.IDENTIFIER, word, ID):
             word, ID = self.lex.start_read()
             self.error_handler.error_handle(error_types.SyntaxIdFatal, Id.IDENTIFIER, ID)
             un_var = self.ao_symbols.undeclared_variable(word, self.aos_pos) #Check for undeclared variable
-            self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.ao_symbols.current_program_name(self.aos_pos))
+            self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.ao_symbols.current_function_name(self.aos_pos))
             self.inLan.genquad("par",word,"REF","_")
             return "inout"
         else:
@@ -557,7 +559,7 @@ class synt:
             return new_expression
         else:
             self.lex.undo_read()
-            start_address = self.inLan.relative_program_pos()
+            start_address = self.inLan.relative_function_pos()
             x = self.expression()
             relop = self.relational_oper()
             y = self.expression()
@@ -565,7 +567,7 @@ class synt:
                 self.inLan.genquad(self.inLan.reverse_relop(relop),x,y,"_")
             else:
                 self.inLan.genquad(relop,x,y,"_")
-            end_address = self.inLan.relative_program_pos()
+            end_address = self.inLan.relative_function_pos()
             expression_list = self.inLan.get_condition(start_address,end_address)
             return expression_list
 
@@ -629,7 +631,7 @@ class synt:
                 #If the variable is not a temporary maded by the compiler then check if it is declared
                 if word.split("_")[0] != "T":
                     un_var = self.ao_symbols.undeclared_variable(word, self.aos_pos) #Check for undeclared variable
-                    self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.ao_symbols.current_program_name(self.aos_pos))
+                    self.error_handler.error_handle(error_types.UndeclaredVariable, un_var,word,self.ao_symbols.current_function_name(self.aos_pos))
             return word
 
     def idtail(self,fun_name):
@@ -638,7 +640,7 @@ class synt:
         if self.error_handler.error_handle(error_types.SyntaxCheckWordId, "(", Id.GROUPING, word, ID):
             arguments = self.actualpars()
             error_id = self.ao_symbols.undeclared_fun_or_proc(fun_name,"function",arguments,self.aos_pos)
-            self.error_handler.error_handle(error_types.UndeclaredFuncOrProc, error_id,"function",fun_name,self.ao_symbols.current_program_name(self.aos_pos))
+            self.error_handler.error_handle(error_types.UndeclaredFuncOrProc, error_id,"function",fun_name,self.ao_symbols.current_function_name(self.aos_pos))
             return True
         return False
 

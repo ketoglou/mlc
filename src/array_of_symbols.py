@@ -8,65 +8,65 @@ class array_of_symbols:
     def __init__(self,file_name):
         self.fd_name = file_name[0:-4] + "_array_of_symbols.txt"
         self.fd = open(self.fd_name,"w")
-        self.list_of_programs = []
-        self.current_program_pos = -1
+        self.list_of_functions = []
+        self.current_function_pos = -1
         self.current_nesting_level  = -1 #Used for array of symbols
         self.temporary_arguments = []
 
     #Add a main or a new procedure or function
-    def add_program(self,program_name,program_type,arguments):
-        #Check if another program(function or procedure) exist in the same nesting level whith the same name,type,arguments
+    def add_function(self,function_name,function_type,arguments):
+        #Check if another function(function or procedure) exist in the same nesting level whith the same name,type,arguments
         self.current_nesting_level += 1
-        self.current_program_pos += 1
+        self.current_function_pos += 1
         #If nesting level == 1 
         if self.current_nesting_level == 1:
-            #Check all programs with nesting level == 1 and see if we redeclared same program
-            for i in range(1,len(self.list_of_programs)):
-                program = self.list_of_programs[i]
+            #Check all functions with nesting level == 1 and see if we redeclared same function
+            for i in range(1,len(self.list_of_functions)):
+                function = self.list_of_functions[i]
                 #If they have same nesting level
-                if program.nesting_level == 1:
+                if function.nesting_level == 1:
                     #If they have same name and type
-                    if program_name == program.program_name and program_type == program.program_type and len(arguments) == len(program.arguments):
+                    if function_name == function.name and function_type == function.type and len(arguments) == len(function.arguments):
                         same_args = True
                         for j in range(0,len(arguments)):
-                            if arguments[j] != program.arguments[j]:
+                            if arguments[j] != function.arguments[j]:
                                 same_args = False
                                 break
                         if same_args == True:
                             return False
                         
         else:
-            for i in range(len(self.list_of_programs)-1,0,-1):
-                program = self.list_of_programs[i]
-                #Check all programs with same nesting level,if not same nesting level then no program exist in this nesting level with same characteristics
-                if  program.nesting_level == self.current_nesting_level :
-                    if program.program_name == program_name and program.program_type == program_type and len(arguments) == len(program.arguments):
+            for i in range(len(self.list_of_functions)-1,0,-1):
+                function = self.list_of_functions[i]
+                #Check all functions with same nesting level,if not same nesting level then no function exist in this nesting level with same characteristics
+                if  function.nesting_level == self.current_nesting_level :
+                    if function.name == function_name and function.type == function_type and len(arguments) == len(function.arguments):
                         same_args = True
                         for j in range(0,len(arguments)):
-                            if arguments[j] != program.arguments[j]:
+                            if arguments[j] != function.arguments[j]:
                                 same_args = False
                                 break
                         if same_args == False:
                             return False
-                elif program.nesting_level <  self.current_nesting_level:
+                elif function.nesting_level <  self.current_nesting_level:
                     break
 
-        pa_record = program_activity_record(program_name,program_type)       #Create an object for this program
-        self.list_of_programs.append(pa_record)                              #Add this program to the list of programs
-        self.list_of_programs[-1].nesting_level = self.current_nesting_level #Set nesting level for current program
-        #Set arguments for current program
+        pa_record = function_activity_record(function_name,function_type)       #Create an object for this function
+        self.list_of_functions.append(pa_record)                              #Add this function to the list of functions
+        self.list_of_functions[-1].nesting_level = self.current_nesting_level #Set nesting level for current function
+        #Set arguments for current function
         for i in range(0,len(arguments)):
-            self.list_of_programs[-1].arguments.append(arguments[i])
+            self.list_of_functions[-1].arguments.append(arguments[i])
         return True
 
-    #Add a declared argument or variable in the current program
+    #Add a declared argument or variable in the current function
     def add_variable(self,var):
-        if var not in self.list_of_programs[-1].variables:
-            self.list_of_programs[-1].variables.append(var)
+        if var not in self.list_of_functions[-1].variables:
+            self.list_of_functions[-1].variables.append(var)
             return True
         return False
 
-    #Add type of argument(in or inout) of current program
+    #Add type of argument(in or inout) of current function
     def add_temporary_argument(self,arg,var):
         self.temporary_arguments.append([arg,var])
 
@@ -81,48 +81,48 @@ class array_of_symbols:
 
     #Set the number of temporary values eg if is 3 then we have T_0,...,T_2
     def set_temp_variables(self,t_vars,pos):
-        self.list_of_programs[pos].temporary_variables = t_vars
+        self.list_of_functions[pos].temporary_variables = t_vars
     
-    #Set the starting quad number of current program
+    #Set the starting quad number of current function
     def set_starting_quad(self,s_quad,pos):
-        self.list_of_programs[pos].starting_quad = s_quad
+        self.list_of_functions[pos].starting_quad = s_quad
     
 
-    #Helping function return current program name
-    def current_program_name(self,pos):
-        return self.list_of_programs[pos].program_name
+    #Helping function return current function name
+    def current_function_name(self,pos):
+        return self.list_of_functions[pos].name
 
 
-    #Check if a variable is declared in the program
+    #Check if a variable is declared in the function
     def undeclared_variable(self,var,pos):
-        current_program = self.list_of_programs[pos]
-        #Check if it is declared on current program
-        if var in current_program.variables:
+        current_function = self.list_of_functions[pos]
+        #Check if it is declared on current function
+        if var in current_function.variables:
             return True
-        for arg in current_program.arguments:
+        for arg in current_function.arguments:
             if arg[1] == var:
                 return True
 
-        #Check all the parent programs to find the variable
-        if current_program.nesting_level > 1:
-            nl_parent = self.list_of_programs[pos].nesting_level #This variable is for check only parents and not their brothers
+        #Check all the parent functions to find the variable
+        if current_function.nesting_level > 1:
+            nl_parent = self.list_of_functions[pos].nesting_level #This variable is for check only parents and not their brothers
             for i in range(pos-1,0,-1):
-                program = self.list_of_programs[i]
-                if nl_parent != program.nesting_level:
-                    if program.nesting_level < current_program.nesting_level:
-                        #Check if variable belong to parent program as declared variable or as argument
-                        if var in program.variables:
+                function = self.list_of_functions[i]
+                if nl_parent != function.nesting_level:
+                    if function.nesting_level < current_function.nesting_level:
+                        #Check if variable belong to parent function as declared variable or as argument
+                        if var in function.variables:
                             return True
-                        for arg in program.arguments:
+                        for arg in function.arguments:
                             if arg[1] == var:
                                 return True
-                    nl_parent = program.nesting_level
+                    nl_parent = function.nesting_level
                 #Break if we check and the last parent
-                if program.nesting_level == 1:
+                if function.nesting_level == 1:
                     break
         
         #Check if it is declared as global variable(no arguments in main)
-        if var in self.list_of_programs[0].variables:
+        if var in self.list_of_functions[0].variables:
             return True
 
         return False 
@@ -132,72 +132,72 @@ class array_of_symbols:
     #name: Used to see if the fun or proc is declared
     #type_called: It is used to see if a proc called with call command and if a function called in expression
     #arguments: Used to see if the arguments are correct
-    #pos: The program position in list_of_programs
-    def undeclared_fun_or_proc(self,name,type_called,arguments,pos):
+    #pos: The function position in list_of_functions
+    def undeclared_fun_or_proc(self,name,type_called,arguments,func_pos):
         
-        program_pos = -1
+        function_pos = -1
         
-        #If its main(pos == 0) then main can call all programs with nesting level == 1
-        if pos == 0:
-            for i in range(1,len(self.list_of_programs)):
-                program = self.list_of_programs[i]
-                if name == program.program_name and type_called == program.program_type and len(arguments) == len(program.arguments):
-                        #If the arguments is the same then we find which program the main call
-                        if self.check_same_args(arguments,program.arguments) == True:
-                            program_pos = i
-        #If its not main(pos > 0) then this program can call 
-        #1)Its own childen programs(all programs following it with nesting level of program + 1 until nesting level < nesting level of program)
+        #If its main(pos == 0) then main can call all functions with nesting level == 1
+        if func_pos == 0:
+            for i in range(1,len(self.list_of_functions)):
+                function = self.list_of_functions[i]
+                if name == function.name and type_called == function.type and len(arguments) == len(function.arguments):
+                        #If the arguments is the same then we find which function the main call
+                        if self.check_same_args(arguments,function.arguments) == True:
+                            function_pos = i
+        #If its not main(pos > 0) then this function can call 
+        #1)Its own childen functions(all functions following it with nesting level of function + 1 until nesting level < nesting level of function)
         #2)Can call it self(recursive)
-        #3)Can can all parent and brother programs(all programs in front of it until nesting level == 1 and after that only the program in front of it with nesting level == 1)
+        #3)Can can all parent and brother functions(all functions in front of it until nesting level == 1 and after that only the function in front of it with nesting level == 1)
         else:
 
-            current_program = self.list_of_programs[pos]
-            #Check all the childerns of the current program(if have any)
-            for i in range(pos+1,len(self.list_of_programs)):
-                program = self.list_of_programs[i]
-                if program.nesting_level == (current_program.nesting_level + 1):
+            current_function = self.list_of_functions[func_pos]
+            #Check all the childerns of the current function(if have any)
+            for i in range(func_pos+1,len(self.list_of_functions)):
+                function = self.list_of_functions[i]
+                if function.nesting_level == (current_function.nesting_level + 1):
                     #If they have same name and type
-                    if name == program.program_name and type_called == program.program_type and len(arguments) == len(program.arguments):
+                    if name == function.name and type_called == function.type and len(arguments) == len(function.arguments):
                         #Check if the arguments are the same
-                        if self.check_same_args(arguments,program.arguments) == True:
-                            program_pos = i
+                        if self.check_same_args(arguments,function.arguments) == True:
+                            function_pos = i
                 else:
                     #If we are here it means that no other children exist
                     break
 
             #Check calling itself
-            if program_pos == -1:
-                #If we are here it means that this program have no children or the children programs checked without find anything
-                #Next thing is to check if the program call it self
-                if name == current_program.program_name and type_called == current_program.program_type and len(arguments) == len(current_program.arguments):
-                    if self.check_same_args(arguments,current_program.arguments) == True:
-                        program_pos = pos
+            if function_pos == -1:
+                #If we are here it means that this function have no children or the children functions checked without find anything
+                #Next thing is to check if the function call it self
+                if name == current_function.name and type_called == current_function.type and len(arguments) == len(current_function.arguments):
+                    if self.check_same_args(arguments,current_function.arguments) == True:
+                        function_pos = func_pos
 
-            #Check all the parents of the current program(if have any)
-            if program_pos == -1:
-                #If we are here it means that this program have no children or the children programs checked without find anything and did not call it self
-                #Last thing is to check if the program call a parent function
+            #Check all the parents of the current function(if have any)
+            if function_pos == -1:
+                #If we are here it means that this function have no children or the children functions checked without find anything and did not call it self
+                #Last thing is to check if the function call a parent function
                 nl_1_found = False #This variable is used to check when a parent with nesting level(nl) 1 is found,so only parents with nl=1 can now be called
-                for i in range(pos-1,0,-1):
-                    program = self.list_of_programs[i]
-                    if program.nesting_level == 1:
+                for i in range(func_pos-1,0,-1):
+                    function = self.list_of_functions[i]
+                    if function.nesting_level == 1:
                         nl_1_found = True
-                    if ((program.nesting_level <= current_program.nesting_level) and (nl_1_found == False)) or ((program.nesting_level == 1) and (nl_1_found == True)):
+                    if ((function.nesting_level <= current_function.nesting_level) and (nl_1_found == False)) or ((function.nesting_level == 1) and (nl_1_found == True)):
                         #If they have same name and type
-                        if name == program.program_name and type_called == program.program_type and len(arguments) == len(program.arguments):
+                        if name == function.name and type_called == function.type and len(arguments) == len(function.arguments):
                             #Check if the arguments are the same
-                            if self.check_same_args(arguments,program.arguments) == True:
-                                program_pos = i
+                            if self.check_same_args(arguments,function.arguments) == True:
+                                function_pos = i
                     
 
-        #If program_pos != -1 then we found it(declared),else is undeclared
-        if program_pos != -1:
+        #If function_pos != -1 then we found it(declared),else is undeclared
+        if function_pos != -1:
             return 0
         else:
             return 1
 
 
-    #Private function to check if arguments are the same(used between comparison of two programs)(used only in undeclared_fun_or_proc)
+    #Private function to check if arguments are the same(used between comparison of two functions)(used only in undeclared_fun_or_proc)
     #eg called_args=['in','inout'] and real_args=[['in','x'],['inout','y']] is same
     def check_same_args(self,called_args,real_args):
         same_args = True
@@ -209,20 +209,20 @@ class array_of_symbols:
 
     #Calculates framelength of every function
     def calc_framelength(self):
-        for function in self.list_of_programs:
+        for function in self.list_of_functions:
             function.frame_length = 4*function.temporary_variables + 4*len(function.arguments) + 4*len(function.variables)
 
-    #Write to the array of symbols file the info about the current program
+    #Write to the array of symbols file the info about the current function
     def write_aos(self):
-        for program in self.list_of_programs:
-            self.fd.writelines("Name:"+program.program_name+"\n")
-            self.fd.write("Type:"+program.program_type+"\n")
-            self.fd.write("Starting Quad:"+str(program.starting_quad)+"\n")
-            self.fd.write("Nesting Level:"+str(program.nesting_level)+"\n")
-            self.fd.write("Arguments:"+str(program.arguments)+"\n")
-            self.fd.write("Variables:"+str(program.variables)+"\n")
-            self.fd.write("Temporary Variables:"+str(program.temporary_variables)+"\n")
-            self.fd.write("Frame Length:"+str(program.frame_length)+"\n")
+        for function in self.list_of_functions:
+            self.fd.writelines("Name:"+function.name+"\n")
+            self.fd.write("Type:"+function.type+"\n")
+            self.fd.write("Starting Quad:"+str(function.starting_quad)+"\n")
+            self.fd.write("Nesting Level:"+str(function.nesting_level)+"\n")
+            self.fd.write("Arguments:"+str(function.arguments)+"\n")
+            self.fd.write("Variables:"+str(function.variables)+"\n")
+            self.fd.write("Temporary Variables:"+str(function.temporary_variables)+"\n")
+            self.fd.write("Frame Length:"+str(function.frame_length)+"\n")
             self.fd.write("___\n")
 
     
@@ -234,19 +234,19 @@ class array_of_symbols:
     def close(self):
         self.fd.close()
 
-#We create an object for every program(main,function,procedure) and hold information
-class program_activity_record:
+#We create an object for every function(main,function,procedure) and hold information
+class function_activity_record:
 
-    #If the program have arguments then the arguments[0] is the variables[0]....and so on until
+    #If the function have arguments then the arguments[0] is the variables[0]....and so on until
     #the arguments list end.After end of the arguments the variables are the declared ones.
-    def __init__(self,program_name,program_type):
-        self.program_name = program_name            #Program name
-        self.program_type = program_type            #Type of program:"main","function","procedure"
-        self.starting_quad = -1                     #Number of starting quad of this program
+    def __init__(self,func_name,func_type):
+        self.name = func_name                       #Function name
+        self.type = func_type                       #Type of function:"main","function","procedure"
+        self.starting_quad = -1                     #Number of starting quad of this function
 
-        self.arguments = []                         #Arguments of this program,leave empty for main(eg [['in','x'],['inout','y']])
+        self.arguments = []                         #Arguments of this function,leave empty for main(eg [['in','x'],['inout','y']])
         self.variables = []                         #Variables that have beed declared(eg ['x','y'])
         self.temporary_variables = -1               #The number indicates the maximum temporary variable (eg if it is 10 then variables form T_0 to T_10 used,if it is -1 no temporary variables used)
-        self.nesting_level = -1                     #Nesting level of this program
+        self.nesting_level = -1                     #Nesting level of this function
         self.frame_length = 0                       #Used for stack in assembly(computed in mips)
         

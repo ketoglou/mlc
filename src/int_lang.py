@@ -11,38 +11,38 @@ class int_lang:
         self.fd = open(self.fd_name,"w+") #Create the file that we will store the idermediate code
         self.temp_var_value = 0 #Used to calculate temporary values
         #Create a list of lists,every list in this list is a procedure or function.
-        #The first list in this list is the program.Every list have the quad of the current program or function or procedure.
-        self.programs_list = [] 
+        #The first list in this list is the function.Every list have the quad of the current function or function or procedure.
+        self.functions_list = [] 
         self.quad_number = 1 #Counts the next quad number
         self.return_statement = -1 #Used to check if a function has one return at least or to make susre that procedure has no return inside.It hold the number of line the return found(or -1 if not found)
         self.exit_statement = False #Used for warning if no exit statement exist in loop statement
 
     #Get the current position of a quad in array
-    def relative_program_pos(self):
-        return len(self.programs_list[-1])
+    def relative_function_pos(self):
+        return len(self.functions_list[-1])
 
     #Gives the next quad number
     def nextquad(self):
         self.quad_number  += 1
         return (self.quad_number - 1)
 
-    #Creates a list for a program or function or procedure with the first quad to be the name
+    #Creates a list for a function or function or procedure with the first quad to be the name
     def make_list(self,block_name):
         quad_start = "begin_block,"+block_name+",_,_"
         quad_end = "end_block,"+block_name+",_,_"
-        program = [quad_start,quad_end]
-        self.programs_list.append(program)
+        function = [quad_start,quad_end]
+        self.functions_list.append(function)
 
-    #If a program or function or procedure end then we write all of its quads
+    #If a function or function or procedure end then we write all of its quads
     #every relop or jump quad may have a relative to their position jump
     #eg jump,_,_,+5 it means that when this quad get its position i will jump to +5 from it
     #so the new quad (lets say it is 110) will be 110:jump,_,_,105
     def write_list(self):
-        if len(self.programs_list) > 0:
-            li = self.programs_list[-1] #Get the current program or function or procedure list
+        if len(self.functions_list) > 0:
+            li = self.functions_list[-1] #Get the current function or function or procedure list
             begin_block_num = self.nextquad() #Get the quad number
             self.fd.write(str(begin_block_num)+":"+li[0]+"\n") #Write begin_block
-            #Write all the quads of this program or function or procedure
+            #Write all the quads of this function or function or procedure
             for quad in range(2,len(li)):
                 quad_num = self.nextquad()
                 squad = li[quad].split(",")
@@ -53,32 +53,32 @@ class int_lang:
                     squad[-1] = str(quad_num - int(squad[-1].split("-")[1]))
                     li[quad] = ",".join(squad)
                 self.fd.write(str(quad_num)+":"+li[quad]+"\n")
-            #if we are in the main program then write halt before end_block
-            if len(self.programs_list) == 1:
+            #if we are in the main function then write halt before end_block
+            if len(self.functions_list) == 1:
                 self.fd.write(str(self.nextquad())+":halt,_,_,_\n")  #write halt
                 self.write_first_line("0:jump,_,_,"+str(begin_block_num)+"\n")  #write jump to main
             self.fd.write(str(self.nextquad())+":"+li[1]+"\n")  #write end_block
-            del self.programs_list[-1] #remove last list
-            return begin_block_num  #return start label of the program(for array of symbols)
+            del self.functions_list[-1] #remove last list
+            return begin_block_num  #return start label of the function(for array of symbols)
 
-    #Creates next quad for the current program(or function or procedure)
+    #Creates next quad for the current function(or function or procedure)
     def genquad(self,op,x,y,z):
         quad = op+","+x+","+y+","+z
-        self.programs_list[-1].append(quad)
+        self.functions_list[-1].append(quad)
 
     #Return the full expression code and remove it from main code
     #this function is used only in condition statement because we need lists of expression quads
     def get_condition(self,start_address,end_address):
-        Q = self.programs_list[-1][start_address:end_address]
-        del self.programs_list[-1][start_address:end_address]
+        Q = self.functions_list[-1][start_address:end_address]
+        del self.functions_list[-1][start_address:end_address]
         return Q
 
     #This function add the condition we get from the above function (get_condition) to the code
     def add_condition(self,expression_list,starting_pos):
-        if(starting_pos == len(self.programs_list[-1])):
-            self.programs_list[-1] = self.programs_list[-1] + expression_list
+        if(starting_pos == len(self.functions_list[-1])):
+            self.functions_list[-1] = self.functions_list[-1] + expression_list
         else:
-            self.programs_list[-1][starting_pos:starting_pos] = expression_list
+            self.functions_list[-1][starting_pos:starting_pos] = expression_list
 
     #Find all relop or jump(set mode) quads that are in the form "relop,x,y,old_address" or "jump,_,_,old_address
     #and set the old_address to the new_address.If the new_address == "DISTANCE"
@@ -90,7 +90,7 @@ class int_lang:
     #Usage(usually):
     #backpatch(expression list,"true" or "false","true" or "false","JUMP" or "RELOP")
     #backpatch(expression list,"true" or "false","DISTANCE","JUMP" or "RELOP")
-    #backpatch(jump to false address,start address in program_list[-1],end_address in program_list[-1],"JUMP-FALSE")
+    #backpatch(jump to false address,start address in functions_list[-1],end_address in functions_list[-1],"JUMP-FALSE")
     def backpatch(self,expression_or_jumpFalseAddress,old_address,new_address,mode):
         #In this mode we use expression_or_jumpFalseAddress variable as the expression list
         if mode == "RELOP" or mode == "JUMP":
@@ -106,10 +106,10 @@ class int_lang:
         #In this mode we use expression_or_jumpFalseAddress variable as address of jump
         elif mode == "JUMP-FALSE":
             for i in range(old_address,new_address):
-                quad = self.programs_list[-1][i].split(",")
+                quad = self.functions_list[-1][i].split(",")
                 if quad[-1] == "false":
                     quad[-1] = "+" + str(expression_or_jumpFalseAddress)
-                    self.programs_list[-1][i] = ",".join(quad)
+                    self.functions_list[-1][i] = ",".join(quad)
                 
 
     #Creates new temporary values
@@ -155,15 +155,15 @@ class int_lang:
     #Special function for loop statement finds the exit(s)(if exist(s)) and set them to jump outside loop
     def special_loop(self,start_address,end_address):
         for i in range(start_address,end_address):
-            quad = self.programs_list[-1][i].split(",")
+            quad = self.functions_list[-1][i].split(",")
             if quad[0] == "exit" :
-                self.programs_list[-1][i] = "jump,_,_,+" + str(end_address - i + 1)
+                self.functions_list[-1][i] = "jump,_,_,+" + str(end_address - i + 1)
 
     #Special function for doublewhile that set the exit from doublewhile quads
-    def special_doublewhile(self,program_address,jump_address):
-        quad = self.programs_list[-1][program_address].split(",")
+    def special_doublewhile(self,function_address,jump_address):
+        quad = self.functions_list[-1][function_address].split(",")
         quad[-1] = "+" + str(jump_address)
-        self.programs_list[-1][program_address] = ",".join(quad)
+        self.functions_list[-1][function_address] = ",".join(quad)
 
     #Check if w str is int or not
     def isInt(self,num):
