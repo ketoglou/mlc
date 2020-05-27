@@ -313,6 +313,7 @@ class mips_assembly:
                     function_call_offset += 4
                 elif quad[2] == "REF":
                     arg_type,offset = self.find_variable_in_parent(quad[1],current_function_pos)
+
                     #if var or cv in current function then load its address in $t0
                     if arg_type == 0:
                         self.add_command("addi $t0,$sp,-"+str(offset))
@@ -495,14 +496,14 @@ class mips_assembly:
     #if it belong to a parent of the parent then is return 3,0
     def find_variable_in_parent(self,var,parent_pos):
         current_function = self.list_of_functions[parent_pos]
-        
+
         offset = 12
         len_args = len(current_function.arguments)
         for i in range(0,len_args):
             par_arg = current_function.arguments[i]
             if par_arg[1] == var:
                 offset += 4*i
-                if par_arg[0] == "CV":
+                if par_arg[0] == "in":
                     return 0,offset
                 else: #REF
                     return 1,offset
