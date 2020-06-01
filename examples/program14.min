@@ -1,0 +1,32 @@
+//At the end of this program a = 106,b = 126,c=300
+program program5{
+    declare a,b,c;
+
+    function square(in x)
+    {
+      return x*x
+    }
+
+    function f2(inout x)
+    {
+      {
+        x := x + square(in 10);
+        return x + 10;
+      }
+
+    }
+
+    procedure p0(in a,in b,inout c)
+    {
+      c := a*a - b*b
+    }
+
+    //main
+    {
+      a := 2;
+      a := a + square(in 2); //a=6
+      b := 10 + f2(inout a);//a=106,b=126
+      call p0(in 20,in 10,inout c); //c = 300
+    }
+
+}

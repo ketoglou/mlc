@@ -1,51 +1,29 @@
-/* This program is for testing loop statement*/
+//At the end of the program a = 110,b = 10,c = 20
+program program1{
+    declare a,b,c;
 
-program program8
-{
-	declare a,b;
-	declare c; //try re-declare a or b or c
-	
-	
-	//Try comment return in function will give you an error,functions must have at least one return
-	//Try change function and make it procedure and you will get an error,procedures must not have return
-	function funap(in c,inout d){
-		declare u,y,x;
-		function fun2(){
-			return 1
+    function a(in n1,inout n2){
+        {
+					n2 := 10;
+					return n1 + 1;
+    		}
 		}
-			
-		{
-			d := d + c - fun2();
-			return d
+
+		procedure b(inout x){
+			x := b + 10
 		}
-	}
-	
-	function adel(in c,inout d){
-		{
-			d := c + 1;
-			return d+c
-		}
-	}
-	
-	function adela(){
-		return 2
-	}
-	
-	{
-		a := 0; //try an undeclared variable
-		//return 1; //uncomment that and you will get an error,we have return only in functions
-		input(a); //Give as input an integer
-		//if we comment exit statement from loop we will get a warning
-		a := adel(in 5,inout a);
-		print(a);
-		loop
-			{
-			a :=  funap(in 2,inout a) + 1; //try change funap to fun2 and you get an error,try change type of arguments or number of arguments
-			if(a >= 20) then
-				exit
-			else
-				print(a)
-			}
-	}
+
+    //main
+    {
+			a := 1;
+			b := 1;
+			while( a < 10){
+				a := a + 1;
+				if( a = 5) then
+					c := a(in a,inout b);
+			};
+			call b(inout c);
+      a := a + 100;
+    }
+
 }
-		

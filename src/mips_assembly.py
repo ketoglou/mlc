@@ -297,7 +297,10 @@ class mips_assembly:
             elif quad[0] == "retv":
                 self.loadvr(quad[1],"$t1",current_function_pos)
                 self.add_command("lw $t0,-8($sp)")
-                self.add_command("sw $t1,($t0)")   
+                self.add_command("sw $t1,($t0)")
+                #In case return is not at the end of the function  
+                self.add_command("lw $ra,($sp)")
+                self.add_command("jr $ra")
             elif quad[0] == "par":  
 
                 if function_call_offset == 12:
