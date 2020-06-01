@@ -1,0 +1,31 @@
+\contentsline {chapter}{\numberline {1}Η γλώσσα miminal++}{3}% 
+\contentsline {section}{\numberline {1.1}Εισαγωγή}{3}% 
+\contentsline {section}{\numberline {1.2}Λεκτικές Μονάδες}{3}% 
+\contentsline {section}{\numberline {1.3}Μορφή προγράμματος}{4}% 
+\contentsline {section}{\numberline {1.4}Τύποι και δηλώσεις μεταβλητών}{5}% 
+\contentsline {section}{\numberline {1.5}Τελεστές και εκφράσεις}{5}% 
+\contentsline {section}{\numberline {1.6}Δομές τις γλώσσας}{5}% 
+\contentsline {subsection}{\numberline {1.6.1}Eκχώρηση}{5}% 
+\contentsline {subsection}{\numberline {1.6.2}Απόφαση if}{6}% 
+\contentsline {subsection}{\numberline {1.6.3}Eπανάληψη while}{6}% 
+\contentsline {subsection}{\numberline {1.6.4}Eπανάληψη loop}{6}% 
+\contentsline {subsection}{\numberline {1.6.5}Επανάληψη forcase}{6}% 
+\contentsline {subsection}{\numberline {1.6.6}Επανάληψη incase}{7}% 
+\contentsline {subsection}{\numberline {1.6.7}Επανάληψη doublewhile}{7}% 
+\contentsline {subsection}{\numberline {1.6.8}Επιστροφή τιμής συνάρτησης}{8}% 
+\contentsline {subsection}{\numberline {1.6.9}Έξοδος δεδομένων}{8}% 
+\contentsline {subsection}{\numberline {1.6.10}Eίσοδος δεδομένων}{8}% 
+\contentsline {subsection}{\numberline {1.6.11}Κλήση διαδικασίας}{8}% 
+\contentsline {subsection}{\numberline {1.6.12}Έξοδος από βρόχο loop}{8}% 
+\contentsline {section}{\numberline {1.7}Υποπρογράμματα}{9}% 
+\contentsline {section}{\numberline {1.8}Μετάδοση παραμέτρων}{9}% 
+\contentsline {chapter}{\numberline {2}Χρήση του μεταφραστή}{10}% 
+\contentsline {chapter}{\numberline {3}Λεκτική Ανάλυση}{11}% 
+\contentsline {section}{\numberline {3.1}Πεπερασμένο Αυτόματο}{11}% 
+\contentsline {section}{\numberline {3.2}Λεκτικός Αναλυτής}{11}% 
+\contentsline {chapter}{\numberline {4}Συντακτική Ανάλυση}{12}% 
+\contentsline {chapter}{\numberline {5}Ενδιάμεση γλώσσα}{13}% 
+\contentsline {chapter}{\numberline {6}Πίνακας Συμβόλων}{14}% 
+\contentsline {chapter}{\numberline {7}Errors}{15}% 
+\contentsline {chapter}{\numberline {8}Παραγωγή κώδικα assembly MIPS}{16}% 
+\contentsline {chapter}{\numberline {9}Δημιουργία κώδικα προσομοίωσης C}{17}% 
