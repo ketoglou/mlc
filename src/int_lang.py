@@ -85,7 +85,7 @@ class int_lang:
     #then the function set the relop to how positions far is from the end of the expression list.
     #Usually used with old_address = "true","false" and new_address = "true","false","DISTANCE"
     #and mode = "RELOP","JUMP".
-    #Anonter mode is the "JUMP-FALSE" which is usually used when we know where in the code is a condition
+    #Anonther mode is the "JUMP-FALSE" which is usually used when we know where in the code is a condition
     #that has unseted the "jump to false" quad so is setted to the rigth address
     #Usage(usually):
     #backpatch(expression list,"true" or "false","true" or "false","JUMP" or "RELOP")
